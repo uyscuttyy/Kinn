@@ -4,7 +4,9 @@
   "description": "Kinn inheritance vault smart contract and backend foundation",
   "type": "module",
   "scripts": {
+    "build:wallet-client": "esbuild backend/wallet-client/client.ts --bundle --platform=browser --format=iife --target=es2022 --outfile=dist/wallet-client.js",
     "build:backend": "tsc -p backend/tsconfig.json",
+    "build": "npm run build:wallet-client && npm run build:backend",
     "telegram:poll": "node --env-file=.env --import tsx backend/src/telegram/poll.ts",
     "reminders:run": "node --env-file=.env --import tsx backend/src/reminders/worker.ts",
     "automation:run-once": "node --env-file=.env --import tsx backend/src/automation/runOnce.ts",
@@ -22,11 +24,13 @@
   },
   "devDependencies": {
     "@types/node": "^22.15.0",
+    "esbuild": "^0.28.2",
     "ethers": "^6.15.0",
     "tsx": "^4.19.3",
     "typescript": "^5.8.3"
   },
   "dependencies": {
+    "@walletconnect/ethereum-provider": "^2.23.10",
     "openai": "^7.4.0"
   }
 }

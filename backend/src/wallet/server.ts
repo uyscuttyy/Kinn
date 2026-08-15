@@ -10,6 +10,8 @@ if (!Number.isSafeInteger(port) || port < 1 || port > 65_535) {
   throw new Error("PORT or KINN_WALLET_PORT must be a valid TCP port");
 }
 const logo = readFileSync(resolve(process.cwd(), "kinnn.jpg"));
+const walletClient = readFileSync(resolve(process.cwd(), "dist/wallet-client.js"));
+const walletConnectProjectId = process.env.WALLETCONNECT_PROJECT_ID?.trim() ?? "";
 
 const html = `<!doctype html>
 <html lang="en">
@@ -43,14 +45,15 @@ const html = `<!doctype html>
   <main>
     <div class="brand"><img class="logo" src="/kinn-logo.jpg" alt="Kinn logo"><span>Kinn</span></div>
     <h1 id="title">Wallet authorization</h1>
-    <p id="summary">Review the request before continuing in MetaMask.</p>
+    <p id="summary">Review the request before connecting your wallet.</p>
     <section id="details" class="details" hidden></section>
-    <button id="sign">Connect MetaMask</button>
+    <button id="sign">Connect browser wallet</button>
+    <button id="walletconnect" class="secondary" hidden>Connect with WalletConnect</button>
     <button id="copy" class="secondary" hidden>Copy verification command</button>
     <a id="explorer" class="secondary" target="_blank" rel="noopener noreferrer" hidden>View transaction</a>
     <pre id="result" hidden></pre>
   </main>
-  <script>
+  <script type="text/plain">
     const button = document.querySelector('#sign');
     const result = document.querySelector('#result');
     const title = document.querySelector('#title');
@@ -227,6 +230,8 @@ const html = `<!doctype html>
       show(copied ? 'Verification command copied. Return to Telegram and send it.' : 'Select and copy the verification command above manually.');
     });
   </script>
+  <script>window.KINN_WALLET_CONFIG = ${JSON.stringify({ walletConnectProjectId })};</script>
+  <script src="/wallet-client.js"></script>
 </body>
 </html>`;
 
@@ -309,6 +314,15 @@ const server = createServer(async (request, response) => {
     response.end(logo);
     return;
   }
+  if (request.url === "/wallet-client.js") {
+    response.writeHead(200, {
+      "content-type": "text/javascript; charset=utf-8",
+      "cache-control": "public, max-age=300",
+      "content-length": walletClient.byteLength
+    });
+    response.end(walletClient);
+    return;
+  }
   if (request.url !== "/" && request.url !== "/index.html") {
     response.writeHead(404).end("Not found");
     return;
@@ -316,7 +330,7 @@ const server = createServer(async (request, response) => {
   response.writeHead(200, {
     "content-type": "text/html; charset=utf-8",
     "cache-control": "no-store",
-    "content-security-policy": "default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self' https:; frame-ancestors 'none'"
+    "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self' https: wss:; img-src 'self' data: https:; frame-src https:; frame-ancestors 'none'"
   });
   response.end(html);
 });

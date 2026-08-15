@@ -3,7 +3,7 @@ services:
     name: kinn-wallet
     runtime: node
     plan: free
-    buildCommand: npm install && npm run build:backend
+    buildCommand: npm install && npm run build
     startCommand: npm run wallet:start
     healthCheckPath: /health
     autoDeploy: true
