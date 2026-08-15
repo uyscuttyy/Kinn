@@ -2,7 +2,10 @@ import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const port = Number(process.env.KINN_WALLET_PORT ?? "4173");
+const port = Number(process.env.PORT ?? process.env.KINN_WALLET_PORT ?? "4173");
+if (!Number.isSafeInteger(port) || port < 1 || port > 65_535) {
+  throw new Error("PORT or KINN_WALLET_PORT must be a valid TCP port");
+}
 const logo = readFileSync(resolve(process.cwd(), "kinnn.jpg"));
 
 const html = `<!doctype html>
@@ -173,6 +176,14 @@ const html = `<!doctype html>
 </html>`;
 
 const server = createServer((request, response) => {
+  if (request.url === "/health") {
+    response.writeHead(200, {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store"
+    });
+    response.end(JSON.stringify({ status: "ok", service: "kinn-wallet" }));
+    return;
+  }
   if (request.url === "/kinn-logo.jpg") {
     response.writeHead(200, {
       "content-type": "image/jpeg",
@@ -195,5 +206,5 @@ const server = createServer((request, response) => {
 });
 
 server.listen(port, "0.0.0.0", () => {
-  console.log(`Kinn wallet authorization page: http://localhost:${port}`);
+  console.log(`Kinn wallet authorization page listening on 0.0.0.0:${port}`);
 });
