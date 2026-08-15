@@ -39,6 +39,15 @@ export function hashData(data: string) {
   return createHash("sha256").update(data.toLowerCase()).digest("hex");
 }
 
+export function resolveChainEnvironment(
+  env: NodeJS.ProcessEnv,
+  prefix: string,
+  chainId: number,
+  fallbackKey?: string
+) {
+  return env[`${prefix}_${chainId}`] ?? (fallbackKey ? env[fallbackKey] : undefined);
+}
+
 function sign(secret: string, value: Omit<TransactionCallback, "signature">) {
   return createHmac("sha256", secret).update([
     value.chatId,

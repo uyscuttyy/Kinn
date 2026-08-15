@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createTransactionCallback, verifyTransactionCallback } from "../src/wallet/transactionCallback.js";
+import {
+  createTransactionCallback, resolveChainEnvironment, verifyTransactionCallback
+} from "../src/wallet/transactionCallback.js";
 
 const transaction = {
   chainId: 1952,
@@ -22,4 +24,10 @@ test("tampered transaction callback is rejected", () => {
 test("expired transaction callback is rejected", () => {
   const callback = createTransactionCallback("test-secret", "123", transaction, 1_000);
   assert.equal(verifyTransactionCallback("test-secret", callback, callback.expiresAt + 1), false);
+});
+
+test("chain-specific environment value overrides the fallback", () => {
+  const env = { KINN_RPC_URL: "fallback", KINN_RPC_URL_1952: "xlayer" };
+  assert.equal(resolveChainEnvironment(env, "KINN_RPC_URL", 1952, "KINN_RPC_URL"), "xlayer");
+  assert.equal(resolveChainEnvironment(env, "KINN_RPC_URL", 999, "KINN_RPC_URL"), "fallback");
 });

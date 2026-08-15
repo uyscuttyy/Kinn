@@ -1,7 +1,9 @@
 import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { hashData, verifyTransactionCallback, type TransactionCallback } from "./transactionCallback.js";
+import {
+  hashData, resolveChainEnvironment, verifyTransactionCallback, type TransactionCallback
+} from "./transactionCallback.js";
 
 const port = Number(process.env.PORT ?? process.env.KINN_WALLET_PORT ?? "4173");
 if (!Number.isSafeInteger(port) || port < 1 || port > 65_535) {
@@ -56,6 +58,7 @@ const html = `<!doctype html>
     const details = document.querySelector('#details');
     const copy = document.querySelector('#copy');
     const explorer = document.querySelector('#explorer');
+    const metaMaskDeepLink = 'https://metamask.app.link/dapp/' + location.href.replace(/^https?:\\/\\//, '');
     let copyText = '';
     const addDetail = (label, value) => {
       const row = document.createElement('div');
@@ -116,6 +119,10 @@ const html = `<!doctype html>
         addDetail('From', initialPayload.transaction.from || 'MetaMask account');
         addDetail('To', initialPayload.transaction.to);
         addDetail('Value', initialPayload.transaction.value || '0x0');
+        if (!window.ethereum && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+          button.textContent = 'Open in MetaMask';
+          summary.textContent = 'Continue in the MetaMask mobile app to review this transaction.';
+        }
       } else {
         throw new Error('Unknown Kinn authorization request.');
       }
@@ -126,7 +133,13 @@ const html = `<!doctype html>
     button.addEventListener('click', async () => {
       button.disabled = true;
       try {
-        if (!window.ethereum) throw new Error('MetaMask was not detected in this browser.');
+        if (!window.ethereum) {
+          if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+            location.href = metaMaskDeepLink;
+            return;
+          }
+          throw new Error('MetaMask was not detected in this browser.');
+        }
         const payload = initialPayload;
         if (payload.kind === 'transaction') {
           const transaction = payload.transaction;
@@ -229,12 +242,13 @@ async function readBody(request: import("node:http").IncomingMessage) {
 async function handleTransactionResult(request: import("node:http").IncomingMessage, response: import("node:http").ServerResponse) {
   const secret = process.env.WALLET_CALLBACK_SECRET;
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  const rpcUrl = process.env.KINN_RPC_URL;
-  if (!secret || !botToken || !rpcUrl) throw new Error("Transaction callback service is not configured");
+  if (!secret || !botToken) throw new Error("Transaction callback service is not configured");
   const body = await readBody(request);
   if (!body.callback || !body.txHash || !/^0x[0-9a-fA-F]{64}$/.test(body.txHash)) throw new Error("Invalid transaction callback payload");
   const callback = body.callback;
   if (!verifyTransactionCallback(secret, callback)) throw new Error("Invalid or expired transaction callback");
+  const rpcUrl = resolveChainEnvironment(process.env, "KINN_RPC_URL", callback.chainId, "KINN_RPC_URL");
+  if (!rpcUrl) throw new Error(`No callback RPC configured for chain ${callback.chainId}`);
 
   const rpc = async (method: string, params: unknown[]) => {
     const result = await fetch(rpcUrl, {
@@ -258,7 +272,7 @@ async function handleTransactionResult(request: import("node:http").IncomingMess
   }
   if (hashData(transaction.input) !== callback.dataHash) throw new Error("Transaction calldata mismatch");
 
-  const message = `Kinn transaction confirmed.\\n\\nTransaction: ${body.txHash}\\nBlock: ${Number.parseInt(receipt.blockNumber, 16)}\\nFrom: ${transaction.from}\\nTo: ${transaction.to}`;
+  const message = `Kinn transaction confirmed.\n\nTransaction: ${body.txHash}\nBlock: ${Number.parseInt(receipt.blockNumber, 16)}\nFrom: ${transaction.from}\nTo: ${transaction.to}`;
   const telegram = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
     method: "POST", headers: { "content-type": "application/json" },
     body: JSON.stringify({ chat_id: callback.chatId, text: message })

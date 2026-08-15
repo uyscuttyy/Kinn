@@ -1,5 +1,5 @@
 import type { TelegramReplyOptions, TelegramTransport } from "./types.js";
-import { createTransactionCallback } from "../wallet/transactionCallback.js";
+import { createTransactionCallback, resolveChainEnvironment } from "../wallet/transactionCallback.js";
 
 function signingUrl(baseUrl: string, payload: unknown): string {
   const encoded = Buffer.from(JSON.stringify(payload, (_, value) =>
@@ -41,7 +41,9 @@ export class TelegramHttpTransport implements TelegramTransport {
         const url = signingUrl(walletAppUrl, {
           kind: "transaction",
           transaction: options.signingRequest,
-          explorerTxBaseUrl: process.env.WALLET_EXPLORER_TX_URL,
+          explorerTxBaseUrl: resolveChainEnvironment(
+            process.env, "WALLET_EXPLORER_TX_URL", options.signingRequest.chainId, "WALLET_EXPLORER_TX_URL"
+          ),
           callback: callbackSecret
             ? createTransactionCallback(callbackSecret, chatId, options.signingRequest)
             : undefined
