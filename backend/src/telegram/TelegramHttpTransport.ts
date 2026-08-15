@@ -36,7 +36,11 @@ export class TelegramHttpTransport implements TelegramTransport {
     } else if (options?.signingRequest) {
       const walletAppUrl = process.env.WALLET_APP_URL;
       if (walletAppUrl) {
-        const url = signingUrl(walletAppUrl, { kind: "transaction", transaction: options.signingRequest });
+        const url = signingUrl(walletAppUrl, {
+          kind: "transaction",
+          transaction: options.signingRequest,
+          explorerTxBaseUrl: process.env.WALLET_EXPLORER_TX_URL
+        });
         if (telegramAcceptsButtonUrl(url)) {
           body.reply_markup = { inline_keyboard: [[{ text: "Open wallet signing", url }]] };
         } else {

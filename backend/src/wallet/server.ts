@@ -29,6 +29,7 @@ const html = `<!doctype html>
     .detail span:last-child { max-width: 70%; overflow-wrap: anywhere; text-align: right; font-weight: 600; }
     button { width: 100%; min-height: 50px; border: 0; border-radius: 14px; background: #111318; color: white; font: inherit; font-weight: 650; cursor: pointer; box-shadow: 0 8px 18px #1113181f; }
     button.secondary { margin-top: 10px; background: white; color: #16181d; border: 1px solid #cfd4dc; }
+    a.secondary { display: grid; place-items: center; width: 100%; min-height: 50px; margin-top: 10px; border-radius: 14px; color: #16181d; border: 1px solid #cfd4dc; text-decoration: none; font-weight: 650; }
     button:disabled { opacity: .55; cursor: wait; }
     pre { margin: 16px 0 0; padding: 14px; overflow-wrap: anywhere; white-space: pre-wrap; background: #f4f5f7; border-radius: 14px; font-size: 13px; }
     @media (max-width: 540px) { body { padding: 14px; } main { padding: 24px 20px; border-radius: 18px; transform: none; } }
@@ -43,6 +44,7 @@ const html = `<!doctype html>
     <section id="details" class="details" hidden></section>
     <button id="sign">Connect MetaMask</button>
     <button id="copy" class="secondary" hidden>Copy verification command</button>
+    <a id="explorer" class="secondary" target="_blank" rel="noopener noreferrer" hidden>View transaction</a>
     <pre id="result" hidden></pre>
   </main>
   <script>
@@ -52,6 +54,7 @@ const html = `<!doctype html>
     const summary = document.querySelector('#summary');
     const details = document.querySelector('#details');
     const copy = document.querySelector('#copy');
+    const explorer = document.querySelector('#explorer');
     let copyText = '';
     const addDetail = (label, value) => {
       const row = document.createElement('div');
@@ -77,6 +80,15 @@ const html = `<!doctype html>
       result.hidden = false;
       result.className = error ? 'error' : '';
       result.textContent = message;
+    };
+    const waitForReceipt = async (txHash) => {
+      for (let attempt = 0; attempt < 90; attempt += 1) {
+        const receipt = await ethereum.request({ method: 'eth_getTransactionReceipt', params: [txHash] });
+        if (receipt) return receipt;
+        show('Transaction pending. Keep this page open.\\n\\n' + txHash);
+        await new Promise((resolve) => setTimeout(resolve, 4000));
+      }
+      return null;
     };
     const decode = () => {
       if (!location.hash.slice(1)) throw new Error('No Kinn signing request was provided.');
@@ -131,7 +143,25 @@ const html = `<!doctype html>
             method: 'eth_sendTransaction',
             params: [{ from: account, to: transaction.to, data: transaction.data, value: transaction.value }]
           });
-          show('Transaction submitted. Hash:\\n\\n' + txHash + '\\n\\nReturn to Telegram after it confirms.');
+          if (payload.explorerTxBaseUrl) {
+            explorer.href = payload.explorerTxBaseUrl.replace(/\\/$/, '') + '/' + txHash;
+            explorer.hidden = false;
+          }
+          button.hidden = true;
+          show('Transaction submitted and waiting for confirmation.\\n\\n' + txHash);
+          const receipt = await waitForReceipt(txHash);
+          if (!receipt) {
+            show('Confirmation is taking longer than expected. The transaction may still confirm.\\n\\n' + txHash);
+            return;
+          }
+          const succeeded = BigInt(receipt.status) === 1n;
+          show(
+            (succeeded ? 'Transaction confirmed.' : 'Transaction failed.') +
+            '\\n\\nHash: ' + txHash +
+            '\\nBlock: ' + BigInt(receipt.blockNumber).toString() +
+            '\\n\\nReturn to Telegram.',
+            !succeeded
+          );
           return;
         }
         if (payload.kind !== 'wallet_challenge') throw new Error('This signing request is not a wallet challenge.');
