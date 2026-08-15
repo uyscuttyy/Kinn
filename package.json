@@ -1,0 +1,28 @@
+{
+  "name": "kinn",
+  "version": "1.0.0",
+  "description": "Kinn inheritance vault smart contract and backend foundation",
+  "type": "module",
+  "scripts": {
+    "build:backend": "tsc -p backend/tsconfig.json",
+    "telegram:poll": "node --env-file=.env --import tsx backend/src/telegram/poll.ts",
+    "reminders:run": "node --env-file=.env --import tsx backend/src/reminders/worker.ts",
+    "automation:run-once": "node --env-file=.env --import tsx backend/src/automation/runOnce.ts",
+    "wallet:serve": "node --env-file=.env --import tsx backend/src/wallet/server.ts",
+    "test:backend": "node --import tsx --test backend/test/*.test.ts",
+    "test:contracts": "forge test",
+    "test": "npm run test:contracts && npm run test:backend"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "ethers": "^6.15.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "openai": "^7.4.0"
+  }
+}

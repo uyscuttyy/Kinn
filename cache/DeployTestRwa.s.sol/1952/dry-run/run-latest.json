@@ -1,0 +1,10 @@
+{
+  "transactions": [
+    {
+      "rpc": "https://testrpc.xlayer.tech/terigon"
+    },
+    {
+      "rpc": "https://testrpc.xlayer.tech/terigon"
+    }
+  ]
+}
