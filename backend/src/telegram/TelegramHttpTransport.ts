@@ -1,4 +1,5 @@
 import type { TelegramReplyOptions, TelegramTransport } from "./types.js";
+import { createTransactionCallback } from "../wallet/transactionCallback.js";
 
 function signingUrl(baseUrl: string, payload: unknown): string {
   const encoded = Buffer.from(JSON.stringify(payload, (_, value) =>
@@ -36,10 +37,14 @@ export class TelegramHttpTransport implements TelegramTransport {
     } else if (options?.signingRequest) {
       const walletAppUrl = process.env.WALLET_APP_URL;
       if (walletAppUrl) {
+        const callbackSecret = process.env.WALLET_CALLBACK_SECRET;
         const url = signingUrl(walletAppUrl, {
           kind: "transaction",
           transaction: options.signingRequest,
-          explorerTxBaseUrl: process.env.WALLET_EXPLORER_TX_URL
+          explorerTxBaseUrl: process.env.WALLET_EXPLORER_TX_URL,
+          callback: callbackSecret
+            ? createTransactionCallback(callbackSecret, chatId, options.signingRequest)
+            : undefined
         });
         if (telegramAcceptsButtonUrl(url)) {
           body.reply_markup = { inline_keyboard: [[{ text: "Open wallet signing", url }]] };

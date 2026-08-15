@@ -1,6 +1,7 @@
 import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { hashData, verifyTransactionCallback, type TransactionCallback } from "./transactionCallback.js";
 
 const port = Number(process.env.PORT ?? process.env.KINN_WALLET_PORT ?? "4173");
 if (!Number.isSafeInteger(port) || port < 1 || port > 65_535) {
@@ -155,11 +156,22 @@ const html = `<!doctype html>
             return;
           }
           const succeeded = BigInt(receipt.status) === 1n;
+          let telegramNotified = false;
+          if (succeeded && payload.callback) {
+            try {
+              const callbackResponse = await fetch('/api/transaction-result', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ callback: payload.callback, txHash })
+              });
+              telegramNotified = callbackResponse.ok;
+            } catch {}
+          }
           show(
             (succeeded ? 'Transaction confirmed.' : 'Transaction failed.') +
             '\\n\\nHash: ' + txHash +
             '\\nBlock: ' + BigInt(receipt.blockNumber).toString() +
-            '\\n\\nReturn to Telegram.',
+            (telegramNotified ? '\\n\\nTelegram has been notified.' : '\\n\\nReturn to Telegram.'),
             !succeeded
           );
           return;
@@ -205,7 +217,67 @@ const html = `<!doctype html>
 </body>
 </html>`;
 
-const server = createServer((request, response) => {
+async function readBody(request: import("node:http").IncomingMessage) {
+  let body = "";
+  for await (const chunk of request) {
+    body += chunk;
+    if (body.length > 20_000) throw new Error("Request body too large");
+  }
+  return JSON.parse(body) as { callback?: TransactionCallback; txHash?: string };
+}
+
+async function handleTransactionResult(request: import("node:http").IncomingMessage, response: import("node:http").ServerResponse) {
+  const secret = process.env.WALLET_CALLBACK_SECRET;
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  const rpcUrl = process.env.KINN_RPC_URL;
+  if (!secret || !botToken || !rpcUrl) throw new Error("Transaction callback service is not configured");
+  const body = await readBody(request);
+  if (!body.callback || !body.txHash || !/^0x[0-9a-fA-F]{64}$/.test(body.txHash)) throw new Error("Invalid transaction callback payload");
+  const callback = body.callback;
+  if (!verifyTransactionCallback(secret, callback)) throw new Error("Invalid or expired transaction callback");
+
+  const rpc = async (method: string, params: unknown[]) => {
+    const result = await fetch(rpcUrl, {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params })
+    });
+    if (!result.ok) throw new Error(`RPC request failed with HTTP ${result.status}`);
+    const json = await result.json() as { result?: any; error?: { message?: string } };
+    if (json.error) throw new Error(json.error.message ?? "RPC request failed");
+    return json.result;
+  };
+  const [receipt, transaction] = await Promise.all([
+    rpc("eth_getTransactionReceipt", [body.txHash]),
+    rpc("eth_getTransactionByHash", [body.txHash])
+  ]);
+  if (!receipt || !transaction) throw new Error("Transaction is not confirmed yet");
+  if (Number.parseInt(receipt.status, 16) !== 1) throw new Error("Transaction failed on chain");
+  if (Number.parseInt(transaction.chainId ?? "0", 16) !== callback.chainId) throw new Error("Transaction chain mismatch");
+  if (transaction.from.toLowerCase() !== callback.from || transaction.to.toLowerCase() !== callback.to) {
+    throw new Error("Transaction sender or recipient mismatch");
+  }
+  if (hashData(transaction.input) !== callback.dataHash) throw new Error("Transaction calldata mismatch");
+
+  const message = `Kinn transaction confirmed.\\n\\nTransaction: ${body.txHash}\\nBlock: ${Number.parseInt(receipt.blockNumber, 16)}\\nFrom: ${transaction.from}\\nTo: ${transaction.to}`;
+  const telegram = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+    method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ chat_id: callback.chatId, text: message })
+  });
+  if (!telegram.ok) throw new Error(`Telegram notification failed with HTTP ${telegram.status}`);
+  response.writeHead(200, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
+  response.end(JSON.stringify({ status: "notified" }));
+}
+
+const server = createServer(async (request, response) => {
+  if (request.method === "POST" && request.url === "/api/transaction-result") {
+    try {
+      await handleTransactionResult(request, response);
+    } catch (error) {
+      response.writeHead(400, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
+      response.end(JSON.stringify({ error: error instanceof Error ? error.message : "Transaction callback failed" }));
+    }
+    return;
+  }
   if (request.url === "/health") {
     response.writeHead(200, {
       "content-type": "application/json; charset=utf-8",
