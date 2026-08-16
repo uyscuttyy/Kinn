@@ -36,7 +36,8 @@ Chain ID: `1952`
 
 ## Outstanding Phase 12 evidence
 
-- Live OpenAI/Agent Router intent request: pending endpoint and model configuration
+- Live WalletConnect pairing and signed-transaction confirmation after a Reown project ID is configured.
+- Live AI intent parsing remains optional. The command-based Telegram product works with AI disabled.
 
 ## Telegram vault automation run (2026-08-14)
 

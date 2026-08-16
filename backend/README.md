@@ -26,4 +26,8 @@ npm run build:backend
 npm run test:backend
 ```
 
+`npm run build:backend` also builds the browser wallet bundle at `dist/wallet-client.js`. The hosted wallet supports injected browser wallets and optional WalletConnect. Configure `WALLETCONNECT_PROJECT_ID` to expose the WalletConnect option; it is a public Reown project identifier, not a private key.
+
+The full project restart checklist is in [../PROJECT_HANDOFF.md](../PROJECT_HANDOFF.md).
+
 The environment template targets Base Sepolia as a development default. A deployed contract address is required before live RPC reads can be performed.

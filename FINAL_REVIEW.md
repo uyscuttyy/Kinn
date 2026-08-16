@@ -1,5 +1,7 @@
 # Kinn Phase 13 — Final Security and UX Review
 
+Project status update (2026-08-16): the X Layer testnet lifecycle, Telegram automation, hosted MetaMask flow, and secure transaction callbacks have been exercised. WalletConnect support is implemented and deployed but still requires a live pairing test with a configured Reown project ID. See [PROJECT_HANDOFF.md](PROJECT_HANDOFF.md) for the restart checklist.
+
 ## Fixes made in this phase
 
 1. **Telegram group-session crossover (high):** sessions were keyed only by chat ID, allowing another user in the same group chat to reuse a verified session. Sessions are now keyed by both chat ID and Telegram user ID.
@@ -42,4 +44,3 @@
 - Issuer freezes or blacklists can leave RWA distributions pending indefinitely.
 - A professional independent smart-contract audit is required before mainnet use with real assets.
 - Slither was not installed in the local environment; Foundry lint, unit tests, integration tests, TypeScript checks, and npm production dependency audit were run.
-
