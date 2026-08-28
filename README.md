@@ -66,6 +66,16 @@ Never commit `.env` files, private keys, Telegram tokens, API keys, or callback 
 
 ## Documentation Map
 
+Active Web-App development target (Phases 2):
+- [ARCHITECTURE.md](ARCHITECTURE.md): target architecture — Kinn Wallet (first-party) + Vault Factory + instances, state machine, DB/API/indexing/keeper (Phase 2).
+- [CONTRACTS.md](CONTRACTS.md): contract architecture (Factory + instance, ETH/USDC, access control) (Phase 2).
+- [SECURITY.md](SECURITY.md): security model, guarantees, adversarial testing matrix (Phase 2).
+- [API.md](API.md): REST API for the Web App (Phase 2).
+- [TESTING.md](TESTING.md): testing strategy across contracts/backend/E2E (Phase 2).
+- [BASE_INTEGRATION.md](BASE_INTEGRATION.md): verified Base / Base Sepolia chain + USDC config (Phase 2).
+- [AUDIT_PHASE1.md](AUDIT_PHASE1.md): Phase 1 repository audit and Phase 2 plan.
+
+Preserved prior work (Telegram is frozen; do not modify):
 - [PROJECT_HANDOFF.md](PROJECT_HANDOFF.md): founder handoff, current status, restart order, and remaining work.
 - [PHASE0_DESIGN.md](PHASE0_DESIGN.md): architecture and product decisions.
 - [PHASE12_XLAYER_EVIDENCE.md](PHASE12_XLAYER_EVIDENCE.md): X Layer testnet lifecycle evidence.
