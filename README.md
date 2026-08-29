@@ -20,6 +20,7 @@ The following capabilities are implemented and tested:
 - Multi-network backend deployment registry.
 - Telegram commands, wallet challenge verification, unsigned transaction preparation, reminders, and automation notifications.
 - Hosted wallet page with browser-wallet/MetaMask support, mobile MetaMask deep-link fallback, and optional WalletConnect.
+- First-party `KeyManager` wallet key infrastructure (Phase 5): strong-random secp256k1 keygen, AES-256-GCM + PBKDF2 encrypted at rest, non-extractable wrapping keys, lock/unlock model, EIP-191 message and transaction signing, and pluggable storage. Keys never leave the client or reach the backend. See [PHASE5_STATUS.md](PHASE5_STATUS.md).
 
 The X Layer testnet lifecycle and failed-transfer retry scenario are documented in [PHASE12_XLAYER_EVIDENCE.md](PHASE12_XLAYER_EVIDENCE.md). The AI parser remains optional and is currently disabled in the tested command-based flow.
 
@@ -74,6 +75,11 @@ Active Web-App development target (Phases 2):
 - [TESTING.md](TESTING.md): testing strategy across contracts/backend/E2E (Phase 2).
 - [BASE_INTEGRATION.md](BASE_INTEGRATION.md): verified Base / Base Sepolia chain + USDC config (Phase 2).
 - [AUDIT_PHASE1.md](AUDIT_PHASE1.md): Phase 1 repository audit and Phase 2 plan.
+
+Phase status notes (current development track — smart contracts + first-party wallet):
+- [PHASE3_STATUS.md](PHASE3_STATUS.md): Factory + per-owner instance contract rebuild.
+- [PHASE4_STATUS.md](PHASE4_STATUS.md): comprehensive Foundry suite (121 tests) for the Factory + instance model.
+- [PHASE5_STATUS.md](PHASE5_STATUS.md): first-party `KeyManager` wallet key infrastructure (COMPLETE).
 
 Preserved prior work (Telegram is frozen; do not modify):
 - [PROJECT_HANDOFF.md](PROJECT_HANDOFF.md): founder handoff, current status, restart order, and remaining work.

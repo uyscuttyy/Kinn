@@ -215,5 +215,5 @@ Primary guarantees: backend compromise cannot move funds or alter inheritance; t
 
 ## 17. Phased implementation map
 
-Phase 3 Smart Contracts (Factory + instance + ETH/USDC + state machine) -> Phase 4 Contract testing (invariant/fuzz/adversarial) -> Phase 5 Wallet infra + KeyManager -> Phase 6 Backend/DB/API -> Phase 7 Base deployment -> Phase 8 Indexing -> Phase 9 Automation hardening -> Phase 10 Security -> Phase 11 E2E on Base Sepolia. Each phase has its own detailed plan in its phase gate.
+Phase 3 Smart Contracts (Factory + instance + ETH/USDC + state machine) -> Phase 4 Contract testing (invariant/fuzz/adversarial) -> Phase 5 Wallet infra + KeyManager (**complete** — see [PHASE5_STATUS.md](PHASE5_STATUS.md)) -> Phase 6 Backend/DB/API -> Phase 7 Base deployment -> Phase 8 Indexing -> Phase 9 Automation hardening -> Phase 10 Security -> Phase 11 E2E on Base Sepolia. Each phase has its own detailed plan in its phase gate.
 Constraints in this phase: the backend has no private-key path; it only builds/simulates unsigned transactions returned for the wallet to sign and broadcast. KeyManager backends are isolated so future smart-account/hardware paths satisfy the same interface.
