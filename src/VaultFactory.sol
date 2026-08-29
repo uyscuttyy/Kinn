@@ -27,14 +27,18 @@ contract KinnVaultFactory {
         automationFeeWei = _automationFeeWei;
     }
 
-    /// @notice Creates the caller's vault. Idempotent-per-owner: reverts if the caller already has one.
+    /// @notice Creates the caller's vault. Idempotent-per-owner: reverts if the caller already has
+    ///         an open vault; a closed vault frees the slot so the owner can create a new one.
     function createVault(
         uint64 checkInInterval,
         uint8 maxMissedCheckIns,
         address[] calldata accounts,
         uint16[] calldata allocationsBps
     ) external returns (address vault) {
-        if (vaultOf[msg.sender] != address(0)) revert VaultAlreadyExists(msg.sender);
+        address existing = vaultOf[msg.sender];
+        if (existing != address(0) && !KinnVault(existing).closed()) {
+            revert VaultAlreadyExists(msg.sender);
+        }
         bytes32 salt = keccak256(abi.encode(msg.sender, _nonce++));
         KinnVault instance = new KinnVault{salt: salt}(
             address(this),

@@ -6,3 +6,8 @@ data/
 cache/
 broadcast/
 backend/.env.example
+lib/
+# Foundry
+out/
+cache/
+broadcast/
