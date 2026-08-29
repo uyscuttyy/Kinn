@@ -278,7 +278,7 @@ export class TelegramBotService {
     confirmation: string
   ) {
     const session = this.requireSession(message);
-    const transaction = this.gateway.prepareOwnerTransaction(session.token, session.deploymentKey, request);
+    const transaction = await this.gateway.prepareOwnerTransaction(session.token, session.deploymentKey, request);
     await this.transport.sendMessage(
       message.chatId,
       `${confirmation}\nA wallet signature is required. Review the network, contract, and calldata before signing.`,

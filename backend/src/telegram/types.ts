@@ -1,5 +1,4 @@
-import type { PrepareAction } from "../api/KinnApi.js";
-import type { AuthorizedPreparedTransaction } from "../api/AuthenticatedKinnApi.js";
+import type { AuthorizedPreparedTransaction, OwnerPrepareAction } from "../api/AuthenticatedKinnApi.js";
 import type { TokenDisplay, VaultStatus } from "../types.js";
 import type { WalletChallenge, WalletSession } from "../auth/WalletAuthService.js";
 
@@ -34,6 +33,6 @@ export interface TelegramGateway {
   prepareOwnerTransaction(
     sessionToken: string,
     deploymentKey: string,
-    request: Exclude<PrepareAction, { action: "trigger_inheritance" | "distribute_token" | "retry_distribution" }>
-  ): AuthorizedPreparedTransaction;
+    request: OwnerPrepareAction
+  ): Promise<AuthorizedPreparedTransaction>;
 }

@@ -21,6 +21,7 @@ The following capabilities are implemented and tested:
 - Telegram commands, wallet challenge verification, unsigned transaction preparation, reminders, and automation notifications.
 - Hosted wallet page with browser-wallet/MetaMask support, mobile MetaMask deep-link fallback, and optional WalletConnect.
 - First-party `KeyManager` wallet key infrastructure (Phase 5): strong-random secp256k1 keygen, AES-256-GCM + PBKDF2 encrypted at rest, non-extractable wrapping keys, lock/unlock model, EIP-191 message and transaction signing, and pluggable storage. Keys never leave the client or reach the backend. See [PHASE5_STATUS.md](PHASE5_STATUS.md).
+- Backend contract layer re-pointed to the VaultFactory + per-owner instance model (Phase 6 milestone 6.1): factory `vaultOf` discovery, instance-scoped reads/writes, factory-targeting `createVault`, owner-scoped async prepares bound to the verified session wallet. See [PHASE6_STATUS.md](PHASE6_STATUS.md).
 
 The X Layer testnet lifecycle and failed-transfer retry scenario are documented in [PHASE12_XLAYER_EVIDENCE.md](PHASE12_XLAYER_EVIDENCE.md). The AI parser remains optional and is currently disabled in the tested command-based flow.
 
@@ -80,6 +81,7 @@ Phase status notes (current development track — smart contracts + first-party 
 - [PHASE3_STATUS.md](PHASE3_STATUS.md): Factory + per-owner instance contract rebuild.
 - [PHASE4_STATUS.md](PHASE4_STATUS.md): comprehensive Foundry suite (121 tests) for the Factory + instance model.
 - [PHASE5_STATUS.md](PHASE5_STATUS.md): first-party `KeyManager` wallet key infrastructure (COMPLETE).
+- [PHASE6_STATUS.md](PHASE6_STATUS.md): backend/DB/API phase — factory+instance backend re-pointing (milestone 6.1 complete, in progress).
 
 Preserved prior work (Telegram is frozen; do not modify):
 - [PROJECT_HANDOFF.md](PROJECT_HANDOFF.md): founder handoff, current status, restart order, and remaining work.

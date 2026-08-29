@@ -45,7 +45,7 @@ class FakeGateway implements TelegramGateway {
   async getTokenDisplay(_deployment: string, _owner: string, token: string, rawBalance: bigint) {
     return { address: token, symbol: "tRWA", decimals: 18, rawBalance, formattedBalance: "0.0000000000000005" };
   }
-  prepareOwnerTransaction(_token: string, _deployment: string, request: any) {
+  async prepareOwnerTransaction(_token: string, _deployment: string, request: any) {
     this.prepared.push(request);
     return { chainId: 12345, to: OWNER, data: "0x1234", value: "0x0" as const, from: OWNER };
   }

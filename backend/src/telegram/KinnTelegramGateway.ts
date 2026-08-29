@@ -1,5 +1,5 @@
-import type { AuthenticatedKinnApi } from "../api/AuthenticatedKinnApi.js";
-import type { KinnApi, PrepareAction } from "../api/KinnApi.js";
+import type { AuthenticatedKinnApi, OwnerPrepareAction } from "../api/AuthenticatedKinnApi.js";
+import type { KinnApi } from "../api/KinnApi.js";
 import type { WalletAuthService } from "../auth/WalletAuthService.js";
 import type { DeploymentRegistry } from "../deployments/DeploymentRegistry.js";
 import type { TelegramGateway } from "./types.js";
@@ -45,7 +45,7 @@ export class KinnTelegramGateway implements TelegramGateway {
   prepareOwnerTransaction(
     sessionToken: string,
     deploymentKey: string,
-    request: Exclude<PrepareAction, { action: "trigger_inheritance" | "distribute_token" | "retry_distribution" }>
+    request: OwnerPrepareAction
   ) {
     return this.authenticatedApi.prepareOwnerTransaction(sessionToken, deploymentKey, request);
   }

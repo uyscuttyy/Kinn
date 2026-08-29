@@ -40,10 +40,10 @@ class SequenceGateway implements AutomationGateway {
   index = 0;
   constructor(private readonly states: AutomationVaultState[]) {}
   async readState() { return this.states[Math.min(this.index++, this.states.length - 1)] as AutomationVaultState; }
-  prepareTrigger() { return tx("0x01"); }
-  prepareTokenDistribution() { return tx("0x02"); }
-  prepareRetry() { return tx("0x03"); }
-  prepareReserveClaim() { return tx("0x04"); }
+  async prepareTrigger() { return tx("0x01"); }
+  async prepareTokenDistribution() { return tx("0x02"); }
+  async prepareRetry() { return tx("0x03"); }
+  async prepareReserveClaim() { return tx("0x04"); }
 }
 
 class FakeRelayer implements RelayerSubmitter {

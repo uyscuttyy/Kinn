@@ -25,10 +25,10 @@ export interface AutomationCandidateRepository {
 
 export interface AutomationGateway {
   readState(candidate: AutomationCandidate): Promise<AutomationVaultState>;
-  prepareTrigger(candidate: AutomationCandidate): PreparedTransaction;
-  prepareTokenDistribution(candidate: AutomationCandidate, token: string): PreparedTransaction;
-  prepareRetry(candidate: AutomationCandidate, pending: PendingDistribution): PreparedTransaction;
-  prepareReserveClaim(candidate: AutomationCandidate): PreparedTransaction;
+  prepareTrigger(candidate: AutomationCandidate): Promise<PreparedTransaction>;
+  prepareTokenDistribution(candidate: AutomationCandidate, token: string): Promise<PreparedTransaction>;
+  prepareRetry(candidate: AutomationCandidate, pending: PendingDistribution): Promise<PreparedTransaction>;
+  prepareReserveClaim(candidate: AutomationCandidate): Promise<PreparedTransaction>;
 }
 
 export interface RelayerReceipt {
@@ -87,7 +87,7 @@ export class AutomationWorker {
       try {
         let state = await this.gateway.readState(candidate);
         if (state.status.vault.active && !state.status.vault.inheritanceTriggered && state.status.inheritanceEligible) {
-          const success = await this.submit(candidate, "trigger", this.gateway.prepareTrigger(candidate), "inheritance trigger");
+          const success = await this.submit(candidate, "trigger", await this.gateway.prepareTrigger(candidate), "inheritance trigger");
           submitted += 1;
           if (!success) { failed += 1; continue; }
           state = await this.gateway.readState(candidate);
@@ -97,7 +97,7 @@ export class AutomationWorker {
         for (const token of state.status.tokens) {
           if (state.processedTokens[token]) continue;
           const success = await this.submit(
-            candidate, "distribute", this.gateway.prepareTokenDistribution(candidate, token), `token distribution ${token}`
+            candidate, "distribute", await this.gateway.prepareTokenDistribution(candidate, token), `token distribution ${token}`
           );
           submitted += 1;
           if (!success) failed += 1;
@@ -107,7 +107,7 @@ export class AutomationWorker {
         for (const pending of state.pendingDistributions) {
           if (pending.amount === 0n || BigInt(this.now()) < pending.nextRetryAt) continue;
           const success = await this.submit(
-            candidate, "retry", this.gateway.prepareRetry(candidate, pending),
+            candidate, "retry", await this.gateway.prepareRetry(candidate, pending),
             `retry ${pending.token} to ${pending.beneficiary}`
           );
           submitted += 1;
@@ -123,7 +123,7 @@ export class AutomationWorker {
           state.status.vault.automationReserve > 0n
         ) {
           const success = await this.submit(
-            candidate, "claim", this.gateway.prepareReserveClaim(candidate), "completed automation reserve claim"
+            candidate, "claim", await this.gateway.prepareReserveClaim(candidate), "completed automation reserve claim"
           );
           submitted += 1;
           if (!success) failed += 1;

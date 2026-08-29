@@ -1,5 +1,7 @@
 export interface VaultView {
   owner: string;
+  /** The instance contract address (factory+instance model). Absent in older fixtures. */
+  address?: string;
   lastCheckIn: bigint;
   checkInInterval: bigint;
   maxMissedCheckIns: number;

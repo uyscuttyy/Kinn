@@ -3,15 +3,15 @@ import type { PreparedTransaction, TokenDisplay, VaultStatus } from "../types.js
 
 export type PrepareAction =
   | { action: "create_vault"; interval: bigint; maxMisses: number; accounts: string[]; allocationsBps: number[]; reserve?: bigint }
-  | { action: "update_settings"; interval: bigint; maxMisses: number }
-  | { action: "update_beneficiaries"; accounts: string[]; allocationsBps: number[] }
-  | { action: "approve_token"; token: string; amount: bigint }
-  | { action: "deposit"; token: string; amount: bigint }
-  | { action: "withdraw"; token: string; amount: bigint }
-  | { action: "check_in" }
-  | { action: "close_vault" }
-  | { action: "top_up_automation_reserve"; amount: bigint }
-  | { action: "withdraw_automation_reserve"; amount: bigint }
+  | { action: "update_settings"; owner: string; interval: bigint; maxMisses: number }
+  | { action: "update_beneficiaries"; owner: string; accounts: string[]; allocationsBps: number[] }
+  | { action: "approve_token"; owner: string; token: string; amount: bigint }
+  | { action: "deposit"; owner: string; token: string; amount: bigint }
+  | { action: "withdraw"; owner: string; token: string; amount: bigint }
+  | { action: "check_in"; owner: string }
+  | { action: "close_vault"; owner: string }
+  | { action: "top_up_automation_reserve"; owner: string; amount: bigint }
+  | { action: "withdraw_automation_reserve"; owner: string; amount: bigint }
   | { action: "trigger_inheritance"; owner: string }
   | { action: "distribute_token"; owner: string; token: string }
   | { action: "retry_distribution"; owner: string; token: string; beneficiary: string };
@@ -29,30 +29,30 @@ export class KinnApi {
     return this.contract.getTokenDisplay(owner, token, rawBalance);
   }
 
-  prepareTransaction(request: PrepareAction): PreparedTransaction {
+  async prepareTransaction(request: PrepareAction): Promise<PreparedTransaction> {
     switch (request.action) {
       case "create_vault":
         return this.contract.prepareCreateVault(
           request.interval, request.maxMisses, request.accounts, request.allocationsBps, request.reserve
         );
       case "update_settings":
-        return this.contract.prepareUpdateSettings(request.interval, request.maxMisses);
+        return this.contract.prepareUpdateSettings(request.owner, request.interval, request.maxMisses);
       case "update_beneficiaries":
-        return this.contract.prepareUpdateBeneficiaries(request.accounts, request.allocationsBps);
+        return this.contract.prepareUpdateBeneficiaries(request.owner, request.accounts, request.allocationsBps);
       case "approve_token":
-        return this.contract.prepareTokenApproval(request.token, request.amount);
+        return this.contract.prepareTokenApproval(request.owner, request.token, request.amount);
       case "deposit":
-        return this.contract.prepareDeposit(request.token, request.amount);
+        return this.contract.prepareDeposit(request.owner, request.token, request.amount);
       case "withdraw":
-        return this.contract.prepareWithdraw(request.token, request.amount);
+        return this.contract.prepareWithdraw(request.owner, request.token, request.amount);
       case "check_in":
-        return this.contract.prepareCheckIn();
+        return this.contract.prepareCheckIn(request.owner);
       case "close_vault":
-        return this.contract.prepareCloseVault();
+        return this.contract.prepareCloseVault(request.owner);
       case "top_up_automation_reserve":
-        return this.contract.prepareTopUpAutomationReserve(request.amount);
+        return this.contract.prepareTopUpAutomationReserve(request.owner, request.amount);
       case "withdraw_automation_reserve":
-        return this.contract.prepareWithdrawAutomationReserve(request.amount);
+        return this.contract.prepareWithdrawAutomationReserve(request.owner, request.amount);
       case "trigger_inheritance":
         return this.contract.prepareTriggerInheritance(request.owner);
       case "distribute_token":
