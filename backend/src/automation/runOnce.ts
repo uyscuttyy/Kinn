@@ -2,7 +2,6 @@ import { JsonRpcProvider, Wallet, getAddress } from "ethers";
 import { EthersRpcClient } from "../blockchain/RpcClient.js";
 import { KinnContractService } from "../blockchain/KinnContractService.js";
 import { loadNetworkConfigs } from "../deployments/loadNetworkConfigs.js";
-import { FileReminderRepository } from "../reminders/FileReminderRepository.js";
 import { TelegramHttpTransport } from "../telegram/TelegramHttpTransport.js";
 import {
   AutomationWorker,
@@ -10,7 +9,9 @@ import {
   type AutomationCandidate
 } from "./AutomationWorker.js";
 import { EthersRelayerSubmitter } from "./EthersRelayerSubmitter.js";
-import { FileAutomationRecordRepository } from "./FileAutomationRecordRepository.js";
+import { DurableAutomationRecordRepository } from "../db/DurableAutomationRecordRepository.js";
+import { DurableReminderRepository } from "../db/DurableReminderRepository.js";
+import { createDocumentStore } from "../db/createDocumentStore.js";
 import { KinnAutomationGateway } from "./KinnAutomationGateway.js";
 import { TelegramAutomationNotifier } from "./TelegramAutomationNotifier.js";
 
@@ -40,12 +41,13 @@ for (const candidate of candidates) {
   if (!services.has(candidate.deploymentKey)) throw new Error(`Candidate uses unknown deployment: ${candidate.deploymentKey}`);
 }
 
-const reminderRepository = new FileReminderRepository(process.env.KINN_REMINDER_STORE ?? "data/reminders.json");
+const documentStore = createDocumentStore();
+const reminderRepository = new DurableReminderRepository(documentStore);
 const worker = new AutomationWorker(
   new InMemoryAutomationCandidateRepository(candidates),
   new KinnAutomationGateway(services),
   new EthersRelayerSubmitter(signers),
-  new FileAutomationRecordRepository(process.env.KINN_AUTOMATION_RECORDS ?? "data/automation.jsonl"),
+  new DurableAutomationRecordRepository(documentStore),
   new TelegramAutomationNotifier(reminderRepository, new TelegramHttpTransport(token))
 );
 

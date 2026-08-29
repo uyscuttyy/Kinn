@@ -10,7 +10,8 @@ import { TelegramBotService } from "./TelegramBotService.js";
 import { TelegramHttpTransport, TelegramPollingClient } from "./TelegramHttpTransport.js";
 import { getAddress } from "ethers";
 import { loadNetworkConfigs } from "../deployments/loadNetworkConfigs.js";
-import { FileReminderRepository } from "../reminders/FileReminderRepository.js";
+import { DurableReminderRepository } from "../db/DurableReminderRepository.js";
+import { createDocumentStore } from "../db/createDocumentStore.js";
 import { RepositoryTelegramReminderControl } from "../reminders/TelegramReminderControl.js";
 
 function required(name: string): string {
@@ -39,7 +40,7 @@ const ai = aiEnabled && process.env.OPENAI_API_KEY && process.env.KINN_OPENAI_MO
       process.env.OPENAI_BASE_URL
     )
   : undefined;
-const reminderRepository = new FileReminderRepository(process.env.KINN_REMINDER_STORE ?? "data/reminders.json");
+const reminderRepository = new DurableReminderRepository(createDocumentStore());
 const reminderControl = new RepositoryTelegramReminderControl(reminderRepository);
 const bot = new TelegramBotService(gateway, transport, ai, reminderControl);
 const polling = new TelegramPollingClient(token, (message) => bot.handleMessage(message));

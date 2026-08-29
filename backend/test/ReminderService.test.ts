@@ -9,8 +9,9 @@ import {
   type ReminderStatusReader
 } from "../src/reminders/ReminderService.js";
 import type { VaultStatus } from "../src/types.js";
-import { FileReminderRepository } from "../src/reminders/FileReminderRepository.js";
-import { mkdtemp, readFile } from "node:fs/promises";
+import { DurableReminderRepository } from "../src/db/DurableReminderRepository.js";
+import { JsonFileDocumentStore } from "../src/db/DocumentStore.js";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -99,13 +100,13 @@ test("isolates reader failures and continues scanning subscriptions", async () =
 
 test("persists reminder subscriptions and delivery deduplication", async () => {
   const directory = await mkdtemp(join(tmpdir(), "kinn-reminders-"));
-  const path = join(directory, "reminders.json");
-  const repository = new FileReminderRepository(path);
+  const repository = new DurableReminderRepository(new JsonFileDocumentStore(directory));
   await repository.save(subscription);
   assert.equal((await repository.listEnabled()).length, 1);
   assert.equal((await repository.find(subscription.deploymentKey, subscription.telegramUserId))?.wallet, OWNER);
   await repository.record("notice-1", 1234);
   assert.equal(await repository.has("notice-1"), true);
-  const stored = JSON.parse(await readFile(path, "utf8"));
+  const stored = JSON.parse(await readFile(join(directory, "reminders.json"), "utf8"));
   assert.equal(stored.subscriptions[0].enabled, true);
+  await rm(directory, { recursive: true, force: true });
 });

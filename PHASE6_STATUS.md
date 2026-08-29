@@ -75,6 +75,49 @@ instance, ETH vs ERC-20 display, amount parsing, and closed-vault `active`.
   rewritten contract-layer suite).
 - `npm run test:contracts` → unchanged (contracts untouched this milestone).
 
+## Milestone 6.2 (COMPLETE): Durable DB layer (ARCHITECTURE.md §9)
+
+Replaces the ad-hoc persistence (append-only JSONL + hand-rolled JSON file +
+in-memory cursor) with a coherent durable store that encodes the §9
+source-of-truth boundary in the data layer itself.
+
+### New `backend/src/db/`
+- `DocumentStore.ts` — `JsonFileDocumentStore`:
+  - **Atomic writes** (temp file + rename, mode 0600) so a crash never leaves a
+    half-written document.
+  - **Per-collection write serialization** with an `update()` read-modify-write
+    primitive, so concurrent workers (automation + reminders) can share the
+    directory without losing updates.
+  - **Corruption recovery**: an unparseable file is quarantined
+    (`*.corrupt-<ts>`) and the collection starts from its fallback — stored
+    data is derived/rebuildable, so the service never crashes on it.
+  - **BigInt-safe JSON** round-tripping.
+  - **`source` flag per collection** (`app_data` vs `chain_mirror`) enforced at
+    registration and surfaced via `manifest()` — the DB never claims authority
+    over chain state.
+- `DurableAutomationRecordRepository` — bounded (5,000) run history replacing
+  `data/automation.jsonl`, with `recent()` for ops surfaces.
+- `DurableEventCursorRepository` — restart-safe indexing cursor, one per
+  network key, replacing the in-memory cursor for real runs.
+- `DurableReminderRepository` — subscriptions + delivery dedupe, replacing
+  `FileReminderRepository`.
+- `createDocumentStore()` — shared store from `KINN_DB_DIR` (default
+  `data/db`). The old `KINN_REMINDER_STORE`/`KINN_AUTOMATION_RECORDS` file
+  paths are retired.
+
+### Migrated
+`reminders/worker.ts`, `telegram/poll.ts`, and `automation/runOnce.ts` now run
+on the durable store; the old `FileReminderRepository` and
+`FileAutomationRecordRepository` are deleted.
+
+### Tests
+New suites: `DocumentStore.test.ts` (restart persistence, fallback on missing
+collections, BigInt round-trip, corruption quarantine, concurrent
+read-modify-write consistency, manifest/source flags, path-escape rejection)
+and `DurableRepositories.test.ts` (record durability/bounding, per-network
+cursor durability, reminder durability).
+- `tsc` → OK · `npm run build:backend` → OK · `npm run test:backend` → **71/71**.
+
 ## Next (Phase 6 continuing)
 - Durable repository/DB layer replacing the in-memory/JSONL repos (§9).
 - Managed relayer signer fix (raw private-key ingestion in `runOnce.ts`), §14.

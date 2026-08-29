@@ -3,7 +3,8 @@ import { KinnContractService } from "../blockchain/KinnContractService.js";
 import { KinnApi } from "../api/KinnApi.js";
 import { loadNetworkConfigs } from "../deployments/loadNetworkConfigs.js";
 import { TelegramHttpTransport } from "../telegram/TelegramHttpTransport.js";
-import { FileReminderRepository } from "./FileReminderRepository.js";
+import { DurableReminderRepository } from "../db/DurableReminderRepository.js";
+import { createDocumentStore } from "../db/createDocumentStore.js";
 import { ReminderService } from "./ReminderService.js";
 import { MultiNetworkReminderStatusReader, TelegramReminderNotifier } from "./TelegramReminderAdapter.js";
 
@@ -16,7 +17,7 @@ const apis = new Map<string, KinnApi>();
 for (const config of loadNetworkConfigs()) {
   apis.set(config.key, new KinnApi(new KinnContractService(new EthersRpcClient(config.rpcUrl), config.contractAddress, config.chainId)));
 }
-const repository = new FileReminderRepository(process.env.KINN_REMINDER_STORE ?? "data/reminders.json");
+const repository = new DurableReminderRepository(createDocumentStore());
 const service = new ReminderService(
   repository,
   repository,
