@@ -23,6 +23,7 @@ The following capabilities are implemented and tested:
 - First-party `KeyManager` wallet key infrastructure (Phase 5): strong-random secp256k1 keygen, AES-256-GCM + PBKDF2 encrypted at rest, non-extractable wrapping keys, lock/unlock model, EIP-191 message and transaction signing, and pluggable storage. Keys never leave the client or reach the backend. See [PHASE5_STATUS.md](PHASE5_STATUS.md).
 - Backend contract layer re-pointed to the VaultFactory + per-owner instance model (Phase 6 milestone 6.1): factory `vaultOf` discovery, instance-scoped reads/writes, factory-targeting `createVault`, owner-scoped async prepares bound to the verified session wallet. See [PHASE6_STATUS.md](PHASE6_STATUS.md).
 - Durable DB layer (Phase 6 milestone 6.2): atomic, write-serialized document store with corruption recovery, per-collection `app_data`/`chain_mirror` source flags, and durable automation-record/cursor/reminder repositories under `KINN_DB_DIR` (default `data/db`). See [PHASE6_STATUS.md](PHASE6_STATUS.md).
+- Managed relayer signer (Phase 6 milestone 6.3): submission behind an injected `RelayerSigner` boundary — production uses a remote signing service (`KINN_RELAYER_SIGNER_URL`, no key in-process); raw `KINN_RELAYER_PRIVATE_KEY` ingestion removed from the runner. See [PHASE6_STATUS.md](PHASE6_STATUS.md).
 
 The X Layer testnet lifecycle and failed-transfer retry scenario are documented in [PHASE12_XLAYER_EVIDENCE.md](PHASE12_XLAYER_EVIDENCE.md). The AI parser remains optional and is currently disabled in the tested command-based flow.
 
@@ -82,7 +83,7 @@ Phase status notes (current development track — smart contracts + first-party 
 - [PHASE3_STATUS.md](PHASE3_STATUS.md): Factory + per-owner instance contract rebuild.
 - [PHASE4_STATUS.md](PHASE4_STATUS.md): comprehensive Foundry suite (121 tests) for the Factory + instance model.
 - [PHASE5_STATUS.md](PHASE5_STATUS.md): first-party `KeyManager` wallet key infrastructure (COMPLETE).
-- [PHASE6_STATUS.md](PHASE6_STATUS.md): backend/DB/API phase — factory+instance backend re-pointing (6.1) and durable DB layer (6.2) complete; API transport next.
+- [PHASE6_STATUS.md](PHASE6_STATUS.md): backend/DB/API phase — factory+instance re-pointing (6.1), durable DB layer (6.2), and managed relayer signer (6.3) complete; API transport next.
 
 Preserved prior work (Telegram is frozen; do not modify):
 - [PROJECT_HANDOFF.md](PROJECT_HANDOFF.md): founder handoff, current status, restart order, and remaining work.

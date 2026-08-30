@@ -118,6 +118,44 @@ and `DurableRepositories.test.ts` (record durability/bounding, per-network
 cursor durability, reminder durability).
 - `tsc` → OK · `npm run build:backend` → OK · `npm run test:backend` → **71/71**.
 
+## Milestone 6.3 (COMPLETE): Managed relayer signer (ARCHITECTURE.md §14)
+
+Removes the direct raw private-key ingestion that used to live in `runOnce.ts`
+(`new Wallet(privateKey, provider)` bound straight into the submitter). Key
+management is now behind a clean seam.
+
+### `backend/src/automation/`
+- `RelayerSigner.ts` — the signing boundary:
+  - `RelayerSigner` — an address + `send`/`wait`. No path exposes, logs, or
+    stores key material.
+  - `EthersRelayerSigner` — wraps an ethers signer (legacy testnet) without
+    leaking its key on the surface; guards the chain ID before submitting.
+  - `RemoteSigningServiceSigner` — production path: the backend transmits the
+    **unsigned** payload (to/data/value/chainId) over an authenticated channel
+    to an external signing service that never shares its key; the service
+    signs, broadcasts, and returns the hash/receipt.
+- `ManagedRelayerSubmitter` — the single submission path for `AutomationWorker`:
+  delegates to the injected `RelayerSignerProvider`.
+- `createRelayerSignerProvider()` — env-driven selection:
+  - `KINN_RELAYER_SIGNER_URL` (+ optional `KINN_RELAYER_SIGNER_TOKEN`,
+    `KINN_RELAYER_ADDRESS`) → `remote_signing_service` (no key in-process).
+  - else `KINN_RELAYER_PRIVATE_KEY` → `legacy_env_key` fallback (in-memory
+    ethers wallet, key unreachable from the submission surface). Not a
+    production path.
+  - neither → throws a clear configuration error.
+
+### Removed / migrated
+`runOnce.ts` no longer reads or constructs any wallet: it builds the provider
+from the env and logs only public relayer addresses (plus the signing mode).
+`EthersRelayerSubmitter.ts` (which held the raw-key signer map) is deleted.
+
+### Tests
+`RelayerSigner.test.ts`: payload forwarding + chain-ID guard on the ethers
+signer; no key material reachable on its surface; remote-service request shape
+(url, body, bearer auth) + result parsing; HTTP-failure and incomplete-receipt
+handling; submitter delegation; factory mode selection and missing-config error.
+- `tsc` → OK · `npm run build:backend` → OK · `npm run test:backend` → **78/78**.
+
 ## Next (Phase 6 continuing)
 - Durable repository/DB layer replacing the in-memory/JSONL repos (§9).
 - Managed relayer signer fix (raw private-key ingestion in `runOnce.ts`), §14.
