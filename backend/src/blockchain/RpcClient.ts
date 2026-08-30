@@ -5,6 +5,8 @@ export interface RpcClient {
   call(to: string, data: string): Promise<string>;
   getLogs(address: string, fromBlock: number, toBlock: number): Promise<ChainLog[]>;
   getBlockNumber(): Promise<number>;
+  /** Native ETH balance at an address (optional; native-balance callers guard for it). */
+  getBalance?(address: string): Promise<bigint>;
 }
 
 export class EthersRpcClient implements RpcClient {
@@ -16,6 +18,10 @@ export class EthersRpcClient implements RpcClient {
 
   async call(to: string, data: string): Promise<string> {
     return this.provider.call({ to, data });
+  }
+
+  async getBalance(address: string): Promise<bigint> {
+    return this.provider.getBalance(address);
   }
 
   async getLogs(address: string, fromBlock: number, toBlock: number): Promise<ChainLog[]> {

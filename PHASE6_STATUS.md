@@ -156,11 +156,61 @@ signer; no key material reachable on its surface; remote-service request shape
 handling; submitter delegation; factory mode selection and missing-config error.
 - `tsc` → OK · `npm run build:backend` → OK · `npm run test:backend` → **78/78**.
 
-## Next (Phase 6 continuing)
-- Durable repository/DB layer replacing the in-memory/JSONL repos (§9).
-- Managed relayer signer fix (raw private-key ingestion in `runOnce.ts`), §14.
-- Web-App REST API transport implementing `API.md` (auth + wallet + vault +
-  transactions + automation endpoints).
+## Milestone 6.4 (COMPLETE): Web-App REST API transport (API.md)
+
+The backend now serves the documented REST API for the Web App, on top of the
+factory+instance contract layer (6.1), the durable DB (6.2), and the managed
+signer (6.3).
+
+### `backend/src/web/`
+- `KinnHttpApi.ts` — stateless request→response router mounted at
+  `/api/v1/:networkKey/...`:
+  - **Auth**: `POST /auth/challenge` (EIP-712, binds wallet+user+nonce+chain),
+    `/auth/verify` → bearer session, `/auth/session`, `/auth/logout`.
+  - **Wallet** (session-gated): `GET /wallet`, `/wallet/address`,
+    `/wallet/balances` (live ETH + USDC via `eth_call`/`eth_getBalance`),
+    `/wallet/transactions` (empty until Phase 8 indexing), `POST /wallet/send`.
+  - **Assets**: `GET /assets` — ETH + native USDC only; unsupported tokens are
+    never claimed.
+  - **Vault**: `POST /vaults` (create via factory), `GET /vaults/:owner/status`,
+    `/activity`, `/beneficiaries`, `/inheritance*`, and owner-scoped writes
+    (`close`, `inheritance/checkin`, `PUT|DELETE beneficiaries`).
+  - **Transactions**: `POST /transactions/prepare` (unsigned), `/simulate`
+    (`eth_call`; explicitly not confirmation), `/submit` returns 202
+    `unbroadcast` — the wallet/KeyManager signs and broadcasts; the API never
+    submits funds.
+  - BigInts serialize as decimal strings; errors use the API.md model
+    (`4xx` with a stable code, `5xx` structured `{ error }`). The wallet
+    namespace authenticates before revealing route existence.
+- `supportedAssets.ts` — per-network supported-asset resolution
+  (`KINN_<NET>_USDC`, values from `BASE_INTEGRATION.md`), plus `rawBalanceOf`.
+- `ApiServer.ts` + `launch.ts` — deployable Node HTTP server (`npm run api:serve`,
+  port `KINN_API_PORT`).
+
+### Boundaries preserved
+- Every write returns an **unsigned** `PreparedTransaction`; the first-party
+  KeyManager (Phase 5) is the only signer and broadcaster.
+- Owner writes bind `owner` to the verified session wallet (via
+  `AuthenticatedKinnApi`) — a caller can never prepare a write for another owner.
+- Indexed history/activity remain empty until Phase 8; the API returns `[]`
+  rather than inventing data.
+
+### Tests
+`KinnHttpApi.test.ts` (8): assets set, challenge+verify → session → wallet,
+missing-token 401, live balances (ETH 1.5 / USDC 7.77 via mocks), factory-
+resolved vault status, session-bound owner write (`from` = session wallet,
+`to` = resolved instance), unsigned prepare, and 404/401 structure.
+- `tsc` → OK · `npm run build:backend` → OK · `npm run test:backend` → **86/86**.
+
+## Phase 6 status: COMPLETE
+
+All three documented Phase 6 deliverables are done and tested:
+1. Backend re-pointed to Factory + instance (6.1)
+2. Durable DB layer with the §9 source-of-truth boundary (6.2)
+3. Managed relayer signer — no raw key ingestion (6.3)
+4. Web-App REST API transport implementing `API.md` (6.4)
+
+Next: Phase 7 (Base deployment) per `ARCHITECTURE.md` §17.
 
 ## Security note
 `.env` still contains historical private keys, a Telegram bot token, and an

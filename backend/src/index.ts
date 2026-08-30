@@ -27,4 +27,8 @@ export * from "./db/createDocumentStore.js";
 export * from "./db/DurableAutomationRecordRepository.js";
 export * from "./db/DurableEventCursorRepository.js";
 export * from "./db/DurableReminderRepository.js";
+export * from "./web/json.js";
+export * from "./web/supportedAssets.js";
+export * from "./web/KinnHttpApi.js";
+export * from "./web/ApiServer.js";
 export * from "./types.js";
