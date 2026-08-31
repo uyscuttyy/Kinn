@@ -25,6 +25,7 @@ The following capabilities are implemented and tested:
 - Durable DB layer (Phase 6 milestone 6.2): atomic, write-serialized document store with corruption recovery, per-collection `app_data`/`chain_mirror` source flags, and durable automation-record/cursor/reminder repositories under `KINN_DB_DIR` (default `data/db`). See [PHASE6_STATUS.md](PHASE6_STATUS.md).
 - Managed relayer signer (Phase 6 milestone 6.3): submission behind an injected `RelayerSigner` boundary — production uses a remote signing service (`KINN_RELAYER_SIGNER_URL`, no key in-process); raw `KINN_RELAYER_PRIVATE_KEY` ingestion removed from the runner. See [PHASE6_STATUS.md](PHASE6_STATUS.md).
 - Web-App REST API (Phase 6 milestone 6.4, Phase 6 complete): `/api/v1/:networkKey/...` transport implementing [API.md](API.md) — EIP-712 auth sessions, session-gated wallet/balances, vault reads and owner-scoped unsigned writes, transaction prepare/simulate. Run with `npm run api:serve`. See [PHASE6_STATUS.md](PHASE6_STATUS.md).
+- Base Sepolia deployment (Phase 7): `KinnVaultFactory` live at `0x9C90d4eC5237099dFBA1CAE625e3BB9A14596421` (chain 84532), verified on-chain and smoke-tested through the backend service layer. See [PHASE7_STATUS.md](PHASE7_STATUS.md).
 
 The X Layer testnet lifecycle and failed-transfer retry scenario are documented in [PHASE12_XLAYER_EVIDENCE.md](PHASE12_XLAYER_EVIDENCE.md). The AI parser remains optional and is currently disabled in the tested command-based flow.
 
@@ -85,6 +86,7 @@ Phase status notes (current development track — smart contracts + first-party 
 - [PHASE4_STATUS.md](PHASE4_STATUS.md): comprehensive Foundry suite (121 tests) for the Factory + instance model.
 - [PHASE5_STATUS.md](PHASE5_STATUS.md): first-party `KeyManager` wallet key infrastructure (COMPLETE).
 - [PHASE6_STATUS.md](PHASE6_STATUS.md): backend/DB/API phase COMPLETE — factory+instance re-pointing (6.1), durable DB layer (6.2), managed relayer signer (6.3), REST API transport (6.4). Next: Phase 7 (Base deployment).
+- [PHASE7_STATUS.md](PHASE7_STATUS.md): Base Sepolia deployment COMPLETE — factory address, tx evidence, configuration, and runbook. Next: Phase 8 (Indexing).
 
 Preserved prior work (Telegram is frozen; do not modify):
 - [PROJECT_HANDOFF.md](PROJECT_HANDOFF.md): founder handoff, current status, restart order, and remaining work.

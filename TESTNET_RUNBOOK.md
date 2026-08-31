@@ -2,6 +2,29 @@
 
 This runbook is for testnet only. The recorded deployment is X Layer testnet, chain ID `1952`. See [PROJECT_HANDOFF.md](PROJECT_HANDOFF.md) before resuming development.
 
+## Base Sepolia deployment (Phase 7, live)
+
+| Item | Value |
+|---|---|
+| Factory | `0x9C90d4eC5237099dFBA1CAE625e3BB9A14596421` |
+| Tx | `0x55fe7236d8399498ef7828255f6e80d915c612d3f89fc5fb4e6d2a46b7febc7b` |
+| Block | 46,206,067 |
+| Automation fee | 0.001 ETH (1e15 wei) |
+| Explorer | https://sepolia.basescan.org/address/0x9C90d4eC5237099dFBA1CAE625e3BB9A14596421 |
+
+Backend env to run against it (see `BASE_INTEGRATION.md`):
+
+```env
+KINN_NETWORKS=base-sepolia
+KINN_BASE_SEPOLIA_RPC_URL=https://sepolia.base.org
+KINN_BASE_SEPOLIA_CHAIN_ID=84532
+KINN_BASE_SEPOLIA_CONTRACT_ADDRESS=0x9C90d4eC5237099dFBA1CAE625e3BB9A14596421
+KINN_BASE_SEPOLIA_USDC=0x036CbD53842c5426634e7929541eC2318f3dCF7e
+KINN_AUTOMATION_FEE_WEI=1000000000000000
+```
+
+Then `npm run api:serve` and exercise `/api/v1/base-sepolia/*`. Full evidence in [PHASE7_STATUS.md](PHASE7_STATUS.md).
+
 ## Required environment
 
 ```bash
