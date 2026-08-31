@@ -7,6 +7,8 @@ import { WalletAuthService, InMemoryWalletAssociationRepository } from "../auth/
 import { DeploymentRegistry } from "../deployments/DeploymentRegistry.js";
 import { loadNetworkConfigs } from "../deployments/loadNetworkConfigs.js";
 import { KinnHttpApi } from "./KinnHttpApi.js";
+import { DurableVaultEventRepository } from "../db/DurableVaultEventRepository.js";
+import { createDocumentStore } from "../db/createDocumentStore.js";
 
 function readBody(request: IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -43,6 +45,7 @@ export function createApiServer(port: number, env: NodeJS.ProcessEnv = process.e
   const deployments = new DeploymentRegistry(networkConfigs.map(({ key, chainId, contractAddress }) => ({ key, chainId, contractAddress })));
   const auth = new WalletAuthService(deployments, new InMemoryWalletAssociationRepository());
   const authenticatedApi = new AuthenticatedKinnApi(apis, auth);
+  const events = new DurableVaultEventRepository(createDocumentStore(env));
   const httpApi = new KinnHttpApi({
     deployments,
     auth,
@@ -50,7 +53,8 @@ export function createApiServer(port: number, env: NodeJS.ProcessEnv = process.e
     authenticatedApi,
     rpc: rpcByKey,
     networkConfigs: configByKey,
-    env
+    env,
+    events
   });
 
   const server = createServer(async (request, response) => {

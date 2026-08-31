@@ -8,6 +8,7 @@ import type { NetworkConfig } from "../deployments/loadNetworkConfigs.js";
 import type { VaultStatus } from "../types.js";
 import { ApiError, parseJsonBody, requiredString, optionalString } from "./json.js";
 import { supportedAssets, rawBalanceOf, type SupportedAsset } from "./supportedAssets.js";
+import type { DurableVaultEventRepository, IndexedVaultEvent } from "../db/DurableVaultEventRepository.js";
 
 /** BigInts are serialized as decimal strings per API.md. */
 type Json = Record<string, unknown>;
@@ -26,6 +27,8 @@ export interface KinnHttpApiDependencies {
   rpc: ReadonlyMap<string, RpcClient>;
   networkConfigs: ReadonlyMap<string, NetworkConfig>;
   env?: NodeJS.ProcessEnv;
+  /** Indexed event store (Phase 8); activity/transaction endpoints are empty without it. */
+  events?: DurableVaultEventRepository;
 }
 
 /**
@@ -207,7 +210,8 @@ export class KinnHttpApi {
       return { status: 200, data: { balances } };
     }
     if (rest === "transactions" && method === "GET") {
-      return { status: 200, data: { transactions: [] } };
+      const events = this.deps.events ? await this.deps.events.byOwner(session.wallet, 50) : [];
+      return { status: 200, data: { transactions: events.filter((event) => TX_EVENT_NAMES.has(event.name)).map(serializeEvent) } };
     }
     if (rest === "send" && method === "POST") {
       const to = requiredString(body.to, "to");
@@ -242,7 +246,8 @@ export class KinnHttpApi {
       return { status: 200, data: { status: serializeStatus(status) } };
     }
     if (method === "GET" && sub === "activity") {
-      return { status: 200, data: { activity: [] } };
+      const events = this.deps.events ? await this.deps.events.byOwner(owner, 50) : [];
+      return { status: 200, data: { activity: events.map(serializeEvent) } };
     }
     if (method === "GET" && sub === "beneficiaries") {
       const status = await api.getVaultStatus(owner);
@@ -346,6 +351,28 @@ function parseBeneficiaries(value: unknown): { accounts: string[]; allocationsBp
   }
   return { accounts, allocationsBps };
 }
+
+function serializeEvent(event: IndexedVaultEvent): Record<string, unknown> {
+  return {
+    key: event.key,
+    name: event.name,
+    address: event.address,
+    blockNumber: event.blockNumber,
+    transactionHash: event.transactionHash,
+    logIndex: event.logIndex,
+    owner: event.owner,
+    values: event.values
+  };
+}
+
+/** Events that represent wallet-relevant transactions (asset/state changes). */
+const TX_EVENT_NAMES = new Set([
+  "VaultCreated", "VaultSettingsUpdated", "BeneficiariesUpdated",
+  "AssetDeposited", "EthDeposited", "AssetWithdrawn", "EthWithdrawn",
+  "CheckedIn", "VaultClosed", "InheritanceTriggered",
+  "InheritanceAssetProcessed", "InheritanceDistributed", "InheritanceDistributionFailed",
+  "AutomationReserveToppedUp", "AutomationReserveWithdrawn", "AutomationFeePaid"
+]);
 
 function serializeStatus(status: VaultStatus): Json {
   return {

@@ -12,6 +12,7 @@
     "automation:run-once": "node --env-file=.env --import tsx backend/src/automation/runOnce.ts",
     "wallet:serve": "node --env-file-if-exists=.env --import tsx backend/src/wallet/server.ts",
     "api:serve": "node --env-file-if-exists=.env --import tsx backend/src/web/launch.ts",
+    "indexer:run": "node --env-file-if-exists=.env --import tsx backend/src/indexing/worker.ts",
     "wallet:start": "node dist/backend/src/wallet/server.js",
     "test:backend": "node --import tsx --test backend/test/*.test.ts",
     "test:contracts": "forge test",

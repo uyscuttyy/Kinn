@@ -62,6 +62,20 @@ export class KinnContractService {
     return (await this.callFactory("automationFeeWei", []))[0] as bigint;
   }
 
+  /**
+   * All vault instances registered with the factory (Phase 8 indexer source).
+   * Enumerates `vaultCount()`/`vaultAt(i)` from the on-chain registry.
+   */
+  async listVaults(): Promise<string[]> {
+    const count = Number((await this.callFactory("vaultCount", []))[0]);
+    const vaults: string[] = [];
+    for (let index = 0; index < count; index += 1) {
+      const vault = (await this.callFactory("vaultAt", [index]))[0] as string;
+      if (vault !== "0x0000000000000000000000000000000000000000") vaults.push(getAddress(vault));
+    }
+    return vaults;
+  }
+
   // ---- Instance reads -----------------------------------------------------
 
   async getVault(owner: string): Promise<VaultView> {
