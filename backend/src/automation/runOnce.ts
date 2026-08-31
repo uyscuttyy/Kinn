@@ -5,12 +5,13 @@ import { loadNetworkConfigs } from "../deployments/loadNetworkConfigs.js";
 import { TelegramHttpTransport } from "../telegram/TelegramHttpTransport.js";
 import {
   AutomationWorker,
-  InMemoryAutomationCandidateRepository,
   type AutomationCandidate
 } from "./AutomationWorker.js";
 import { ManagedRelayerSubmitter } from "./ManagedRelayerSubmitter.js";
 import { createRelayerSignerProvider } from "./createRelayerSignerProvider.js";
 import { DurableAutomationRecordRepository } from "../db/DurableAutomationRecordRepository.js";
+import { DurableAutomationCandidateRepository } from "../db/DurableAutomationCandidateRepository.js";
+import { DurableSubmissionLedger } from "../db/DurableSubmissionLedger.js";
 import { DurableReminderRepository } from "../db/DurableReminderRepository.js";
 import { createDocumentStore } from "../db/createDocumentStore.js";
 import { KinnAutomationGateway } from "./KinnAutomationGateway.js";
@@ -48,12 +49,17 @@ for (const [deploymentKey, address] of relayer.addresses) {
 
 const documentStore = createDocumentStore();
 const reminderRepository = new DurableReminderRepository(documentStore);
+const candidateRepository = new DurableAutomationCandidateRepository(documentStore);
+// Seed the durable registry from KINN_AUTOMATION_CANDIDATES (kept for ops parity).
+for (const candidate of candidates) await candidateRepository.add(candidate);
 const worker = new AutomationWorker(
-  new InMemoryAutomationCandidateRepository(candidates),
+  candidateRepository,
   new KinnAutomationGateway(services),
   new ManagedRelayerSubmitter(relayer.provider),
   new DurableAutomationRecordRepository(documentStore),
-  new TelegramAutomationNotifier(reminderRepository, new TelegramHttpTransport(token))
+  new TelegramAutomationNotifier(reminderRepository, new TelegramHttpTransport(token)),
+  () => Math.floor(Date.now() / 1000),
+  new DurableSubmissionLedger(documentStore)
 );
 
 const result = await worker.runOnce();

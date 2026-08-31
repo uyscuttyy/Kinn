@@ -59,6 +59,31 @@ export interface AutomationNotifier {
   notify(candidate: AutomationCandidate, record: AutomationRecord): Promise<void>;
 }
 
+/**
+ * Double-submit guard (Phase 9, §14). Keyed by logical action; see
+ * DurableSubmissionLedger for the durable implementation.
+ */
+export interface SubmissionGate {
+  decide(key: string): Promise<"submit" | "wait" | "skip">;
+  pendingHash(key: string): Promise<string | undefined>;
+  markPending(key: string, transactionHash: string, at: number): Promise<void>;
+  markConfirmed(key: string, success: boolean, at: number, detail?: string): Promise<void>;
+}
+
+export class InMemorySubmissionGate implements SubmissionGate {
+  private readonly entries = new Map<string, { state: "pending" | "confirmed" | "reverted"; hash?: string }>();
+  async decide(key: string) {
+    const entry = this.entries.get(key);
+    if (!entry) return "submit";
+    if (entry.state === "pending") return "wait";
+    if (entry.state === "confirmed") return "skip";
+    return "submit";
+  }
+  async pendingHash(key: string) { return this.entries.get(key)?.state === "pending" ? this.entries.get(key)!.hash : undefined; }
+  async markPending(key: string, transactionHash: string) { this.entries.set(key, { state: "pending", hash: transactionHash }); }
+  async markConfirmed(key: string, success: boolean) { this.entries.set(key, { state: success ? "confirmed" : "reverted" }); }
+}
+
 export class InMemoryAutomationCandidateRepository implements AutomationCandidateRepository {
   constructor(private readonly values: AutomationCandidate[]) {}
   async listCandidates() { return this.values; }
@@ -70,16 +95,34 @@ export class InMemoryAutomationRecordRepository implements AutomationRecordRepos
 }
 
 export class AutomationWorker {
+  private runInProgress = false;
+
   constructor(
     private readonly candidates: AutomationCandidateRepository,
     private readonly gateway: AutomationGateway,
     private readonly relayer: RelayerSubmitter,
     private readonly records: AutomationRecordRepository,
     private readonly notifier: AutomationNotifier,
-    private readonly now: () => number = () => Math.floor(Date.now() / 1000)
+    private readonly now: () => number = () => Math.floor(Date.now() / 1000),
+    /** Double-submit guard (Phase 9); in-memory by default, durable in production. */
+    private readonly gate: SubmissionGate = new InMemorySubmissionGate()
   ) {}
 
-  async runOnce(): Promise<{ checked: number; submitted: number; failed: number }> {
+  /**
+   * One keeper pass. Ingestion-locked (API.md /automation/run): concurrent
+   * invocations are refused instead of racing on the same candidates.
+   */
+  async runOnce(): Promise<{ checked: number; submitted: number; failed: number; skipped?: true }> {
+    if (this.runInProgress) return { checked: 0, submitted: 0, failed: 0, skipped: true };
+    this.runInProgress = true;
+    try {
+      return await this.pass();
+    } finally {
+      this.runInProgress = false;
+    }
+  }
+
+  private async pass(): Promise<{ checked: number; submitted: number; failed: number }> {
     const candidates = await this.candidates.listCandidates();
     let submitted = 0;
     let failed = 0;
@@ -87,31 +130,38 @@ export class AutomationWorker {
       try {
         let state = await this.gateway.readState(candidate);
         if (state.status.vault.active && !state.status.vault.inheritanceTriggered && state.status.inheritanceEligible) {
-          const success = await this.submit(candidate, "trigger", await this.gateway.prepareTrigger(candidate), "inheritance trigger");
-          submitted += 1;
-          if (!success) { failed += 1; continue; }
+          const attempt = await this.submit(
+            candidate, "trigger", "inheritance trigger",
+            `${candidate.id}:trigger`,
+            () => this.gateway.prepareTrigger(candidate)
+          );
+          if (attempt.outcome === "submitted") submitted += 1;
+          if (!attempt.success) { failed += 1; continue; }
           state = await this.gateway.readState(candidate);
         }
 
         if (!state.status.vault.inheritanceTriggered) continue;
         for (const token of state.status.tokens) {
           if (state.processedTokens[token]) continue;
-          const success = await this.submit(
-            candidate, "distribute", await this.gateway.prepareTokenDistribution(candidate, token), `token distribution ${token}`
+          const attempt = await this.submit(
+            candidate, "distribute", `token distribution ${token}`,
+            `${candidate.id}:distribute:${token.toLowerCase()}`,
+            () => this.gateway.prepareTokenDistribution(candidate, token)
           );
-          submitted += 1;
-          if (!success) failed += 1;
+          if (attempt.outcome === "submitted") submitted += 1;
+          if (!attempt.success) failed += 1;
         }
 
         state = await this.gateway.readState(candidate);
         for (const pending of state.pendingDistributions) {
           if (pending.amount === 0n || BigInt(this.now()) < pending.nextRetryAt) continue;
-          const success = await this.submit(
-            candidate, "retry", await this.gateway.prepareRetry(candidate, pending),
-            `retry ${pending.token} to ${pending.beneficiary}`
+          const attempt = await this.submit(
+            candidate, "retry", `retry ${pending.token} to ${pending.beneficiary}`,
+            `${candidate.id}:retry:${pending.token.toLowerCase()}:${pending.beneficiary.toLowerCase()}`,
+            () => this.gateway.prepareRetry(candidate, pending)
           );
-          submitted += 1;
-          if (!success) failed += 1;
+          if (attempt.outcome === "submitted") submitted += 1;
+          if (!attempt.success) failed += 1;
         }
 
         state = await this.gateway.readState(candidate);
@@ -122,11 +172,13 @@ export class AutomationWorker {
           state.pendingDistributions.length === 0 &&
           state.status.vault.automationReserve > 0n
         ) {
-          const success = await this.submit(
-            candidate, "claim", await this.gateway.prepareReserveClaim(candidate), "completed automation reserve claim"
+          const attempt = await this.submit(
+            candidate, "claim", "completed automation reserve claim",
+            `${candidate.id}:claim`,
+            () => this.gateway.prepareReserveClaim(candidate)
           );
-          submitted += 1;
-          if (!success) failed += 1;
+          if (attempt.outcome === "submitted") submitted += 1;
+          if (!attempt.success) failed += 1;
         }
       } catch (error) {
         failed += 1;
@@ -142,25 +194,58 @@ export class AutomationWorker {
     return { checked: candidates.length, submitted, failed };
   }
 
+  /**
+   * Gate-checked submission (Phase 9):
+   *  - "skip": this logical action already confirmed — no new transaction.
+   *  - "wait": a transaction for this action is pending (e.g. a crash between
+   *            submit and receipt) — resolve that hash instead of submitting
+   *            again (never double-submit).
+   *  - "submit": fresh or previously reverted — submit and mark pending.
+   * The receipt is then waited and recorded either way.
+   */
   private async submit(
     candidate: AutomationCandidate,
     kind: AutomationRecord["kind"],
-    transaction: PreparedTransaction,
-    detail: string
-  ): Promise<boolean> {
+    detail: string,
+    actionKey: string,
+    prepare: () => Promise<PreparedTransaction>
+  ): Promise<{ outcome: "submitted" | "waited" | "skipped"; success: boolean }> {
     try {
-      const transactionHash = await this.relayer.submit(candidate.deploymentKey, transaction);
+      const decision = await this.gate.decide(actionKey);
+      if (decision === "skip") {
+        return { outcome: "skipped", success: true };
+      }
+      let transactionHash: string;
+      let outcome: "submitted" | "waited";
+      if (decision === "wait") {
+        const pending = await this.gate.pendingHash(actionKey);
+        if (!pending) {
+          transactionHash = await this.relayer.submit(candidate.deploymentKey, await prepare());
+          await this.gate.markPending(actionKey, transactionHash, this.now());
+          outcome = "submitted";
+        } else {
+          transactionHash = pending;
+          outcome = "waited";
+        }
+      } else {
+        transactionHash = await this.relayer.submit(candidate.deploymentKey, await prepare());
+        await this.gate.markPending(actionKey, transactionHash, this.now());
+        outcome = "submitted";
+      }
+
       const receipt = await this.relayer.wait(candidate.deploymentKey, transactionHash);
-      const record: AutomationRecord = {
+      await this.gate.markConfirmed(actionKey, receipt.success, this.now(), detail);
+      await this.saveAndNotify(candidate, {
         candidateId: candidate.id,
         kind,
         transactionHash,
         success: receipt.success,
-        detail: receipt.success ? `${detail} confirmed at block ${receipt.blockNumber}` : `${detail} reverted`,
+        detail: receipt.success
+          ? `${detail} confirmed at block ${receipt.blockNumber}${outcome === "waited" ? " (recovered pending submission)" : ""}`
+          : `${detail} reverted`,
         recordedAt: this.now()
-      };
-      await this.saveAndNotify(candidate, record);
-      return receipt.success;
+      });
+      return { outcome, success: receipt.success };
     } catch (error) {
       await this.saveAndNotify(candidate, {
         candidateId: candidate.id,
@@ -169,7 +254,7 @@ export class AutomationWorker {
         detail: error instanceof Error ? error.message : `${detail} submission failed`,
         recordedAt: this.now()
       });
-      return false;
+      return { outcome: "submitted", success: false };
     }
   }
 
