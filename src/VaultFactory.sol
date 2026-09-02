@@ -41,13 +41,7 @@ contract KinnVaultFactory {
         }
         bytes32 salt = keccak256(abi.encode(msg.sender, _nonce++));
         KinnVault instance = new KinnVault{salt: salt}(
-            address(this),
-            msg.sender,
-            checkInInterval,
-            maxMissedCheckIns,
-            accounts,
-            allocationsBps,
-            automationFeeWei
+            address(this), msg.sender, checkInInterval, maxMissedCheckIns, accounts, allocationsBps, automationFeeWei
         );
         vault = address(instance);
         vaultOf[msg.sender] = vault;

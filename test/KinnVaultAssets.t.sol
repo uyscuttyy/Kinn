@@ -45,6 +45,7 @@ contract KinnVaultAssetsTest is Base {
         assertEq(address(vault).balance, 3 ether);
         assertEq(vault.protectedAssetBalance(ETH_SENTINEL), 2 ether);
     }
+
     function test_Deposit_RevertOnInvalidInputs() public {
         vm.startPrank(owner);
         token.approve(address(vault), type(uint256).max);

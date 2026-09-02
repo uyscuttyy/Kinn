@@ -74,6 +74,7 @@ contract KinnVaultInheritanceTest is Base {
         vm.expectRevert(KinnVault.InheritanceNotTriggered.selector);
         vault.distributeInheritanceAsset(address(token));
     }
+
     function test_Distribute_DoubleProcessingPrevented() public {
         _depositToken(10 ether);
         _trigger();
@@ -132,6 +133,7 @@ contract KinnVaultInheritanceTest is Base {
         assertEq(vault.pendingInheritance(ETH_SENTINEL, address(toggle)), 0);
         assertEq(uint8(vault.state()), uint8(KinnVault.InheritanceState.Distributed));
     }
+
     function test_FailedTokenDeliveryStaysPendingAndRetries() public {
         _depositToken(10 ether);
         _trigger();
@@ -189,9 +191,7 @@ contract KinnVaultInheritanceTest is Base {
     function test_Retry_NoPendingReverts() public {
         _trigger();
         vm.prank(keeper);
-        vm.expectRevert(
-            abi.encodeWithSelector(KinnVault.NoPendingInheritance.selector, ETH_SENTINEL, beneficiaryA)
-        );
+        vm.expectRevert(abi.encodeWithSelector(KinnVault.NoPendingInheritance.selector, ETH_SENTINEL, beneficiaryA));
         vault.retryInheritanceDistribution(ETH_SENTINEL, beneficiaryA);
     }
 }

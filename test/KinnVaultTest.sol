@@ -99,7 +99,7 @@ contract KinnVaultTest {
         vm.expectRevert(abi.encodeWithSelector(KinnVault.NotOwner.selector, address(0xBEEF)));
         vm.prank(address(0xBEEF));
         vault.updateBeneficiaries(a, b);
-}
+    }
 
     // ---- all possible invalid configs rejected at construction ----------
 

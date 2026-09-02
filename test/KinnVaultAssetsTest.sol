@@ -66,9 +66,7 @@ contract KinnVaultAssetsTest {
 
     function testCannotWithdrawMoreThanBalance() public {
         _depositToken(1_000);
-        vm.expectRevert(
-            abi.encodeWithSelector(KinnVault.InsufficientBalance.selector, 1_000, 1_001)
-        );
+        vm.expectRevert(abi.encodeWithSelector(KinnVault.InsufficientBalance.selector, 1_000, 1_001));
         vm.prank(OWNER);
         vault.withdraw(address(token), 1_001);
     }
@@ -104,9 +102,7 @@ contract KinnVaultAssetsTest {
     function testCannotWithdrawETHMoreThanProtected() public {
         vm.prank(OWNER);
         vault.depositETH{value: 1 ether}();
-        vm.expectRevert(
-            abi.encodeWithSelector(KinnVault.InsufficientBalance.selector, 1 ether, 2 ether)
-        );
+        vm.expectRevert(abi.encodeWithSelector(KinnVault.InsufficientBalance.selector, 1 ether, 2 ether));
         vm.prank(OWNER);
         vault.withdraw(ETH, 2 ether);
     }
@@ -134,9 +130,7 @@ contract KinnVaultAssetsTest {
     function testCannotWithdrawMoreReserveThanHeld() public {
         vm.prank(OWNER);
         vault.topUpAutomationReserve{value: 0.5 ether}();
-        vm.expectRevert(
-            abi.encodeWithSelector(KinnVault.InsufficientAutomationReserve.selector, 0.5 ether, 1 ether)
-        );
+        vm.expectRevert(abi.encodeWithSelector(KinnVault.InsufficientAutomationReserve.selector, 0.5 ether, 1 ether));
         vm.prank(OWNER);
         vault.withdrawAutomationReserve(1 ether);
     }

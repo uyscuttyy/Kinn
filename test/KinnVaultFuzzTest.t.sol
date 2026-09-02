@@ -76,7 +76,9 @@ contract KinnVaultFuzzTest is Test {
         uint256 count = bound(countSeed, 1, 50);
         uint16[] memory allocs = _allocationsFor(count);
         address[] memory accs = new address[](count);
-        for (uint256 i; i < count; ++i) accs[i] = makeAddr(string(abi.encodePacked("fz", i)));
+        for (uint256 i; i < count; ++i) {
+            accs[i] = makeAddr(string(abi.encodePacked("fz", i)));
+        }
 
         vm.startPrank(owner);
         KinnVault v = KinnVault(factory.createVault(INTERVAL, MAX_MISSED, accs, allocs));

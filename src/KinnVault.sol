@@ -23,7 +23,14 @@ contract KinnVault {
     uint256 public immutable automationFeeWei;
 
     // ---- Inheritance state machine ---------------------------------------
-    enum InheritanceState { Active, Missed, Eligible, Distributing, Distributed, Closed }
+    enum InheritanceState {
+        Active,
+        Missed,
+        Eligible,
+        Distributing,
+        Distributed,
+        Closed
+    }
 
     struct Beneficiary {
         address account;
@@ -85,13 +92,8 @@ contract KinnVault {
     error VaultHasAssets(address asset, uint256 balance);
     error VaultHasAutomationReserve(uint256 balance);
     error InvalidAddress();
-// ---- Events ----------------------------------------------------------
-    event VaultInitialized(
-        address indexed owner,
-        uint64 checkInInterval,
-        uint8 maxMissedCheckIns,
-        uint64 lastCheckIn
-    );
+    // ---- Events ----------------------------------------------------------
+    event VaultInitialized(address indexed owner, uint64 checkInInterval, uint8 maxMissedCheckIns, uint64 lastCheckIn);
     event VaultSettingsUpdated(address indexed owner, uint64 checkInInterval, uint8 maxMissedCheckIns);
     event BeneficiariesUpdated(address indexed owner, address[] accounts, uint16[] allocationsBps);
     event AssetDeposited(address indexed owner, address indexed token, uint256 amount);
@@ -151,7 +153,8 @@ contract KinnVault {
         _replaceBeneficiaries(_accounts, _allocationsBps);
         emit VaultInitialized(_owner, _checkInInterval, _maxMissedCheckIns, lastCheckIn);
     }
-// ---- Owner: configuration --------------------------------------------
+
+    // ---- Owner: configuration --------------------------------------------
 
     /// @notice Updates check-in interval and missed-check-in limit.
     function updateSettings(uint64 _checkInInterval, uint8 _maxMissedCheckIns) external onlyOwner {
@@ -163,10 +166,7 @@ contract KinnVault {
     }
 
     /// @notice Replaces the beneficiary list (exact 100% allocation enforced).
-    function updateBeneficiaries(address[] calldata _accounts, uint16[] calldata _allocationsBps)
-        external
-        onlyOwner
-    {
+    function updateBeneficiaries(address[] calldata _accounts, uint16[] calldata _allocationsBps) external onlyOwner {
         _requireConfigurable();
         _replaceBeneficiaries(_accounts, _allocationsBps);
     }
@@ -240,7 +240,8 @@ contract KinnVault {
         if (!success) revert NativeTransferFailed(msg.sender, amount);
         emit AutomationReserveWithdrawn(owner, amount, automationReserve);
     }
-// ---- Inheritance (permissionless; contract validates eligibility) ----
+
+    // ---- Inheritance (permissionless; contract validates eligibility) ----
 
     /// @notice Permanently triggers inheritance once eligible.
     function triggerInheritance() external nonReentrant {
@@ -299,7 +300,8 @@ contract KinnVault {
         if (!success) revert NativeTransferFailed(msg.sender, amount);
         emit AutomationFeePaid(owner, msg.sender, amount, 0);
     }
-// ---- Views ------------------------------------------------------------
+
+    // ---- Views ------------------------------------------------------------
 
     /// @notice Derived, authoritative state per the documented state machine.
     function state() public view returns (InheritanceState) {
@@ -331,6 +333,9 @@ contract KinnVault {
         if (inheritanceTriggered || closed || block.timestamp <= lastCheckIn) return 0;
         uint256 missed = (block.timestamp - lastCheckIn) / checkInInterval;
         if (missed > maxMissedCheckIns) return maxMissedCheckIns;
+        // Safe: the branch above caps `missed` at maxMissedCheckIns (<= MAX_MISSED_CHECK_INS),
+        // so the value fits in uint8 without truncation.
+        // forge-lint: disable-next-line(unsafe-typecast)
         return uint8(missed);
     }
 
@@ -390,7 +395,8 @@ contract KinnVault {
         }
         emit BeneficiariesUpdated(owner, _accounts, _allocationsBps);
     }
-function _withdrawAsset(address token, uint256 amount) private {
+
+    function _withdrawAsset(address token, uint256 amount) private {
         if (amount == 0) revert InvalidAmount();
         if (token == ETH_SENTINEL) {
             uint256 available = _assetBalance(ETH_SENTINEL);
@@ -476,14 +482,12 @@ function _withdrawAsset(address token, uint256 amount) private {
 
     function _tryTransfer(address asset, address to, uint256 amount) private returns (bool) {
         if (asset == ETH_SENTINEL) {
-            (bool okEth,) = address(this).call{gas: TRANSFER_GAS_LIMIT}(
-                abi.encodeCall(this.attemptEtherTransfer, (to, amount))
-            );
+            (bool okEth,) =
+                address(this).call{gas: TRANSFER_GAS_LIMIT}(abi.encodeCall(this.attemptEtherTransfer, (to, amount)));
             return okEth;
         }
-        (bool okToken,) = address(this).call{gas: TRANSFER_GAS_LIMIT}(
-            abi.encodeCall(this.attemptTokenTransfer, (asset, to, amount))
-        );
+        (bool okToken,) =
+            address(this).call{gas: TRANSFER_GAS_LIMIT}(abi.encodeCall(this.attemptTokenTransfer, (asset, to, amount)));
         return okToken;
     }
 
@@ -540,6 +544,8 @@ function _withdrawAsset(address token, uint256 amount) private {
 
     function _toUint128(uint256 value) private pure returns (uint128) {
         if (value > type(uint128).max) revert ReserveOverflow();
+        // Safe: the guard above reverts when the value exceeds uint128 range.
+        // forge-lint: disable-next-line(unsafe-typecast)
         return uint128(value);
     }
 }

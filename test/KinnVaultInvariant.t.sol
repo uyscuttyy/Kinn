@@ -133,12 +133,29 @@ contract KinnVaultInvariantTest is Test {
 
     // ---- Ghost variable getters (read from the handler) ----
 
-    function tokenIn() public view returns (uint256) { return handler.tokenIn(); }
-    function tokenOut() public view returns (uint256) { return handler.tokenOut(); }
-    function tokenDistributed() public view returns (uint256) { return handler.tokenDistributed(); }
-    function ethIn() public view returns (uint256) { return handler.ethIn(); }
-    function ethOut() public view returns (uint256) { return handler.ethOut(); }
-    function ethDistributed() public view returns (uint256) { return handler.ethDistributed(); }
+    function tokenIn() public view returns (uint256) {
+        return handler.tokenIn();
+    }
+
+    function tokenOut() public view returns (uint256) {
+        return handler.tokenOut();
+    }
+
+    function tokenDistributed() public view returns (uint256) {
+        return handler.tokenDistributed();
+    }
+
+    function ethIn() public view returns (uint256) {
+        return handler.ethIn();
+    }
+
+    function ethOut() public view returns (uint256) {
+        return handler.ethOut();
+    }
+
+    function ethDistributed() public view returns (uint256) {
+        return handler.ethDistributed();
+    }
 
     // ---- Invariants ----
 
@@ -162,11 +179,7 @@ contract KinnVaultInvariantTest is Test {
 
     /// @notice Distributed funds went exactly to the recorded beneficiaries, nothing else.
     function invariant_BeneficiariesReceivedExactlyDistributed() public view {
-        assertEq(
-            handler.b0().balance + handler.b1().balance,
-            handler.ethDistributed(),
-            "ETH beneficiary mismatch"
-        );
+        assertEq(handler.b0().balance + handler.b1().balance, handler.ethDistributed(), "ETH beneficiary mismatch");
         assertEq(
             handler.token().balanceOf(handler.b0()) + handler.token().balanceOf(handler.b1()),
             handler.tokenDistributed(),

@@ -4,6 +4,11 @@ This runbook is for testnet only. The recorded deployment is X Layer testnet, ch
 
 ## Base Sepolia deployment (Phase 7, live)
 
+> **Phase 11 update:** this factory was built from an older contract revision —
+> vaults created through it revert on ERC-20 `deposit`. A fresh factory with the
+> current contracts was deployed in Phase 11 and is the one the backend now
+> targets; see [PHASE11_STATUS.md](PHASE11_STATUS.md).
+
 | Item | Value |
 |---|---|
 | Factory | `0x9C90d4eC5237099dFBA1CAE625e3BB9A14596421` |

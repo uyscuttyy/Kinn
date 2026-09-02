@@ -104,8 +104,7 @@ contract RetryScenarioVaultOwner {
 }
 
 contract DeployRetryScenario {
-    VmRetryScenario private constant vm =
-        VmRetryScenario(address(uint160(uint256(keccak256("hevm cheat code")))));
+    VmRetryScenario private constant vm = VmRetryScenario(address(uint160(uint256(keccak256("hevm cheat code")))));
 
     function run() external returns (RetryScenarioVaultOwner scenario) {
         uint256 deployerPrivateKey = vm.envUint("KINN_DEPLOYER_PRIVATE_KEY");

@@ -11,3 +11,4 @@ lib/
 out/
 cache/
 broadcast/
+.e2e-state.json

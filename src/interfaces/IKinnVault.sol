@@ -4,7 +4,14 @@ pragma solidity 0.8.24;
 /// @title IKinnVault
 /// @notice Minimal interface for a KinnVault instance consumed by services and the factory.
 interface IKinnVault {
-    enum InheritanceState { Active, Missed, Eligible, Distributing, Distributed, Closed }
+    enum InheritanceState {
+        Active,
+        Missed,
+        Eligible,
+        Distributing,
+        Distributed,
+        Closed
+    }
 
     struct Beneficiary {
         address account;

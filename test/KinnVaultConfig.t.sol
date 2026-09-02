@@ -115,6 +115,7 @@ contract KinnVaultConfigTest is Base {
         vault.updateBeneficiaries(accounts, ok);
         vm.stopPrank();
     }
+
     function test_MaxFiftyBeneficiaries() public {
         address[] memory accounts = new address[](50);
         uint16[] memory allocations = new uint16[](50);
@@ -176,18 +177,14 @@ contract KinnVaultConfigTest is Base {
     function test_CloseVault_RevertIfHasAssets() public {
         _depositToken(100 ether);
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(KinnVault.VaultHasAssets.selector, address(token), 100 ether)
-        );
+        vm.expectRevert(abi.encodeWithSelector(KinnVault.VaultHasAssets.selector, address(token), 100 ether));
         vault.closeVault();
     }
 
     function test_CloseVault_RevertIfHasETH() public {
         _depositETH(1 ether);
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(KinnVault.VaultHasAssets.selector, ETH_SENTINEL, 1 ether)
-        );
+        vm.expectRevert(abi.encodeWithSelector(KinnVault.VaultHasAssets.selector, ETH_SENTINEL, 1 ether));
         vault.closeVault();
     }
 
