@@ -15,7 +15,6 @@
   --color-destructive: var(--color-alert);
   --color-system: var(--color-action);
   --color-soft: rgb(251 251 255 / 0.62);  /* secondary text: surface at 62% */
-  --color-faint: rgb(251 251 255 / 0.38); /* tertiary text: surface at 38% */
   --color-wash: #111C10;      /* section band: one step lighter than deep */
   --color-card: #16211A;       /* card surface: deep + surface 4% */
   --color-muted: #1A2A1F;      /* Subtle elevation on deep */
