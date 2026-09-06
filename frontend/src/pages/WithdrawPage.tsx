@@ -87,7 +87,7 @@ export function WithdrawPage({ networkKey }: WithdrawPageProps) {
                 Withdrawals are disabled because your vault is in{' '}
                 <strong>{status.state}</strong> state.
               </TextLarge>
-              <TextSmall style={{ color: '#6B7B6E' }}>
+              <TextSmall style={{ color: 'var(--color-soft)' }}>
                 Once inheritance has been triggered, all vault assets are
                 frozen and distributed to beneficiaries. This is irreversible.
               </TextSmall>
@@ -111,7 +111,7 @@ export function WithdrawPage({ networkKey }: WithdrawPageProps) {
             <ArrowUpFromLine size={28} color="var(--color-alert)" />
             <Display>Withdraw</Display>
           </Row>
-          <TextLarge style={{ color: '#6B7B6E' }}>
+          <TextLarge style={{ color: 'var(--color-soft)' }}>
             Move assets from your vault back to your wallet. Only available
             before inheritance is triggered.
           </TextLarge>
@@ -148,7 +148,7 @@ export function WithdrawPage({ networkKey }: WithdrawPageProps) {
                 {parseFloat(amount) > 0 && (
                   <Card padding="sm" variant="outlined">
                     <Row justify="between">
-                      <TextSmall style={{ color: '#6B7B6E' }}>You will withdraw</TextSmall>
+                      <TextSmall style={{ color: 'var(--color-soft)' }}>You will withdraw</TextSmall>
                       <Mono>{amount} {selectedAsset.symbol}</Mono>
                     </Row>
                   </Card>

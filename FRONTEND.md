@@ -50,7 +50,7 @@ bugs rather than working around them in the frontend.
 ## 4. Architecture and where your app sits
 
 ```
-[User wallet (MetaMask/WalletConnect)]   <-- signs; source of user identity
+[User wallet (first-party KeyManager)]   <-- signs; source of user identity
         |  (fetch unsigned tx / post signature flows)
 [Your frontend]  --HTTPS-->  [Backend HTTP API /api/v1/<network>/...]
                                    |  read-only RPC + event indexer (DB cache)

@@ -46,7 +46,7 @@ export function Input({
           <span
             style={{
               paddingLeft: 'var(--space-3)',
-              color: '#6B7B6E',
+              color: 'var(--color-soft)',
               fontSize: 'var(--text-body-sm)',
             }}
           >
@@ -67,7 +67,7 @@ export function Input({
           <span
             style={{
               paddingRight: 'var(--space-3)',
-              color: '#6B7B6E',
+              color: 'var(--color-soft)',
               fontSize: 'var(--text-body-sm)',
             }}
           >

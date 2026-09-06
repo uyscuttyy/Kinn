@@ -111,7 +111,7 @@ export function CreateVaultPage({ networkKey }: CreateVaultPageProps) {
       <Stack gap={6} className="py-8">
         <Stack gap={2}>
           <Display>Create your vault</Display>
-          <TextLarge style={{ color: '#6B7B6E' }}>
+          <TextLarge style={{ color: 'var(--color-soft)' }}>
             Configure how inheritance activates. All values are stored on-chain and
             can be changed later (until inheritance is triggered).
           </TextLarge>
@@ -121,7 +121,7 @@ export function CreateVaultPage({ networkKey }: CreateVaultPageProps) {
         <Card padding="lg">
           <Stack gap={5}>
             <Row gap={2} align="center">
-              <Shield size={20} color="var(--color-brand)" />
+              <Shield size={20} color="var(--color-primary)" />
               <Text style={{ fontWeight: 600, fontSize: '1.125rem' }}>Schedule</Text>
             </Row>
 
@@ -158,7 +158,7 @@ export function CreateVaultPage({ networkKey }: CreateVaultPageProps) {
             </Row>
 
             <Card padding="sm" variant="outlined">
-              <TextSmall style={{ color: '#6B7B6E' }}>
+              <TextSmall style={{ color: 'var(--color-soft)' }}>
                 You must check in at least once every{' '}
                 <TextSmall style={{ color: 'var(--color-foreground)' }}>
                   {INTERVAL_OPTIONS.find((o) => o.value === intervalSec)?.label.toLowerCase()}
@@ -180,7 +180,7 @@ export function CreateVaultPage({ networkKey }: CreateVaultPageProps) {
             <Row justify="between" align="center">
               <Stack gap={1}>
                 <Text style={{ fontWeight: 600, fontSize: '1.125rem' }}>Beneficiaries</Text>
-                <TextSmall style={{ color: '#6B7B6E' }}>
+                <TextSmall style={{ color: 'var(--color-soft)' }}>
                   Allocations must sum to exactly 100% (10000 basis points).
                 </TextSmall>
               </Stack>
@@ -247,12 +247,12 @@ export function CreateVaultPage({ networkKey }: CreateVaultPageProps) {
             </Stack>
 
             <Row justify="between" align="center">
-              <TextSmall style={{ color: '#6B7B6E' }}>
+              <TextSmall style={{ color: 'var(--color-soft)' }}>
                 Total allocation
               </TextSmall>
               <Mono
                 style={{
-                  color: totalBps === 10000 ? 'var(--color-brand)' : 'var(--color-destructive)',
+                  color: totalBps === 10000 ? 'var(--color-primary)' : 'var(--color-destructive)',
                   fontWeight: 600,
                 }}
               >

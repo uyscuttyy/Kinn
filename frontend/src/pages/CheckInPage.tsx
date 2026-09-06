@@ -60,7 +60,7 @@ export function CheckInPage({ networkKey }: CheckInPageProps) {
 
         <Stack gap={3} className="text-center">
           <Display>Check in</Display>
-          <TextLarge style={{ color: '#6B7B6E' }}>
+          <TextLarge style={{ color: 'var(--color-soft)' }}>
             Reset the dead-man switch. Your vault's clock starts over.
           </TextLarge>
         </Stack>
@@ -70,7 +70,7 @@ export function CheckInPage({ networkKey }: CheckInPageProps) {
           <Stack gap={6}>
             <Row justify="between" align="center" wrap>
               <Stack gap={1}>
-                <TextSmall style={{ color: '#6B7B6E', letterSpacing: '0.1em' }}>
+                <TextSmall style={{ color: 'var(--color-soft)', letterSpacing: '0.1em' }}>
                   CURRENT STATE
                 </TextSmall>
                 <VaultStateBadge state={state} />
@@ -92,25 +92,25 @@ export function CheckInPage({ networkKey }: CheckInPageProps) {
             )}
 
             <Stack gap={1}>
-              <TextSmall style={{ color: '#6B7B6E' }}>Last check-in</TextSmall>
+              <TextSmall style={{ color: 'var(--color-soft)' }}>Last check-in</TextSmall>
               <Text>{formatTimestamp(status.lastCheckIn)}</Text>
             </Stack>
           </Stack>
         </Card>
 
         {/* Big CTA */}
-        <Card padding="lg" style={{ backgroundColor: 'rgb(115 146 183 / 0.08)' }}>
+        <Card padding="lg" style={{ backgroundColor: 'rgb(64 86 244 / 0.08)' }}>
           <Stack gap={4} className="items-center text-center">
             <div
               style={{
                 width: 80,
                 height: 80,
                 borderRadius: '50%',
-                backgroundColor: 'rgb(115 146 183 / 0.15)',
+                backgroundColor: 'rgb(64 86 244 / 0.15)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: 'var(--color-brand)',
+                color: 'var(--color-primary)',
               }}
             >
               <CheckCircle2 size={40} strokeWidth={1.5} />
@@ -120,7 +120,7 @@ export function CheckInPage({ networkKey }: CheckInPageProps) {
               <Text style={{ fontWeight: 600, fontSize: '1.25rem' }}>
                 {canCheckIn ? 'Ready to check in' : 'Check-in not available'}
               </Text>
-              <TextSmall style={{ color: '#6B7B6E', maxWidth: 360 }}>
+              <TextSmall style={{ color: 'var(--color-soft)', maxWidth: 360 }}>
                 {canCheckIn
                   ? 'A check-in is a single transaction. The vault contract records the new timestamp.'
                   : `Your vault is in ${state} state. Check-in is not available at this time.`}
@@ -143,10 +143,10 @@ export function CheckInPage({ networkKey }: CheckInPageProps) {
 
         <Card padding="md" variant="outlined">
           <Stack gap={2}>
-            <TextSmall style={{ color: '#6B7B6E', letterSpacing: '0.1em' }}>
+            <TextSmall style={{ color: 'var(--color-soft)', letterSpacing: '0.1em' }}>
               HOW CHECK-INS WORK
             </TextSmall>
-            <TextSmall style={{ color: '#6B7B6E' }}>
+            <TextSmall style={{ color: 'var(--color-soft)' }}>
               Every check-in resets the vault's clock to "now." Miss{' '}
               <TextSmall style={{ color: 'var(--color-foreground)' }}>
                 {status.maxMissedCheckIns}

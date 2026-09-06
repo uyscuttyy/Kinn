@@ -19,7 +19,7 @@ The following capabilities are implemented and tested:
 - Native automation reserve accounting and relayer reimbursement.
 - Multi-network backend deployment registry.
 - Telegram commands, wallet challenge verification, unsigned transaction preparation, reminders, and automation notifications.
-- Hosted wallet page with browser-wallet/MetaMask support, mobile MetaMask deep-link fallback, and optional WalletConnect.
+- Hosted wallet page with generic browser-wallet support and optional WalletConnect.
 - First-party `KeyManager` wallet key infrastructure (Phase 5): strong-random secp256k1 keygen, AES-256-GCM + PBKDF2 encrypted at rest, non-extractable wrapping keys, lock/unlock model, EIP-191 message and transaction signing, and pluggable storage. Keys never leave the client or reach the backend. See [PHASE5_STATUS.md](PHASE5_STATUS.md).
 - Backend contract layer re-pointed to the VaultFactory + per-owner instance model (Phase 6 milestone 6.1): factory `vaultOf` discovery, instance-scoped reads/writes, factory-targeting `createVault`, owner-scoped async prepares bound to the verified session wallet. See [PHASE6_STATUS.md](PHASE6_STATUS.md).
 - Durable DB layer (Phase 6 milestone 6.2): atomic, write-serialized document store with corruption recovery, per-collection `app_data`/`chain_mirror` source flags, and durable automation-record/cursor/reminder repositories under `KINN_DB_DIR` (default `data/db`). See [PHASE6_STATUS.md](PHASE6_STATUS.md).

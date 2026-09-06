@@ -9,7 +9,6 @@ import { Navigation } from '@/components/Navigation';
 import { ToastContainer } from '@/components/Modal';
 
 import { LandingPage } from '@/pages/LandingPage';
-import { ConnectPage } from '@/pages/ConnectPage';
 import { CreateWalletPage } from '@/pages/CreateWalletPage';
 import { UnlockPage } from '@/pages/UnlockPage';
 import { VaultDashboardPage } from '@/pages/VaultDashboardPage';
@@ -48,7 +47,6 @@ function AppRoutes() {
       <Navigation networkKey={DEFAULT_NETWORK} />
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/connect" element={<ConnectPage networkKey={DEFAULT_NETWORK} />} />
         <Route path="/create-wallet" element={<CreateWalletPage networkKey={DEFAULT_NETWORK} />} />
         <Route path="/unlock" element={<UnlockPage networkKey={DEFAULT_NETWORK} />} />
 

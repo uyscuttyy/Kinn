@@ -59,7 +59,7 @@ export function DepositPage({ networkKey }: DepositPageProps) {
       const weiAmount = BigInt(intPart + paddedFrac).toString();
 
       if (!isNativeEth(selectedAsset)) {
-        // ERC-20: approve first, then deposit — each signed in MetaMask
+        // ERC-20: approve first, then deposit — each signed by the Kinn wallet
         showToast('Approving token spending…', 'info');
         const approveResult = await approveMutation.mutateAsync({
           token: selectedAsset.address,
@@ -94,10 +94,10 @@ export function DepositPage({ networkKey }: DepositPageProps) {
       <Stack gap={6} className="py-8">
         <Stack gap={2}>
           <Row gap={2} align="center">
-            <ArrowDownToLine size={28} color="var(--color-brand)" />
+            <ArrowDownToLine size={28} color="var(--color-primary)" />
             <Display>Deposit</Display>
           </Row>
-          <TextLarge style={{ color: '#6B7B6E' }}>
+          <TextLarge style={{ color: 'var(--color-soft)' }}>
             Move assets into your vault. Funds are protected by the smart contract
             and will be distributed to beneficiaries if you stop checking in.
           </TextLarge>
@@ -135,11 +135,11 @@ export function DepositPage({ networkKey }: DepositPageProps) {
                   <Card padding="sm" variant="outlined">
                     <Stack gap={2}>
                       <Row justify="between">
-                        <TextSmall style={{ color: '#6B7B6E' }}>You will deposit</TextSmall>
+                        <TextSmall style={{ color: 'var(--color-soft)' }}>You will deposit</TextSmall>
                         <Mono>{amount} {selectedAsset.symbol}</Mono>
                       </Row>
                       {!isNativeEth(selectedAsset) && (
-                        <TextSmall style={{ color: '#6B7B6E' }}>
+                        <TextSmall style={{ color: 'var(--color-soft)' }}>
                           This requires an approval transaction first, then a deposit
                           transaction. Both will be signed by your wallet.
                         </TextSmall>

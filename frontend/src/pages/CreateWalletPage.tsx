@@ -65,24 +65,24 @@ export function CreateWalletPage({ networkKey: _networkKey }: CreateWalletPagePr
                 width: 64,
                 height: 64,
                 borderRadius: '50%',
-                backgroundColor: 'rgb(115 146 183 / 0.15)',
+                backgroundColor: 'rgb(64 86 244 / 0.15)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: 'var(--color-brand)',
+                color: 'var(--color-primary)',
               }}
             >
               <Key size={32} strokeWidth={1.5} />
             </div>
             <Display>Your wallet is ready.</Display>
-            <TextLarge style={{ color: '#6B7B6E' }}>
+            <TextLarge style={{ color: 'var(--color-soft)' }}>
               Your address is below. The encrypted key is stored only on this device.
             </TextLarge>
           </Stack>
 
           <Card padding="lg">
             <Stack gap={4}>
-              <TextSmall style={{ color: '#6B7B6E', letterSpacing: '0.1em' }}>
+              <TextSmall style={{ color: 'var(--color-soft)', letterSpacing: '0.1em' }}>
                 WALLET ADDRESS
               </TextSmall>
               <Mono style={{ wordBreak: 'break-all', fontSize: '0.95rem' }}>
@@ -94,10 +94,10 @@ export function CreateWalletPage({ networkKey: _networkKey }: CreateWalletPagePr
           <Card padding="md">
             <Stack gap={3}>
               <Row gap={2} align="center">
-                <Shield size={16} color="var(--color-brand)" />
+                <Shield size={16} color="var(--color-primary)" />
                 <Text style={{ fontWeight: 600 }}>What happens next</Text>
               </Row>
-              <TextSmall style={{ color: '#6B7B6E' }}>
+              <TextSmall style={{ color: 'var(--color-soft)' }}>
                 Your key is encrypted with your passphrase using AES-256-GCM
                 (PBKDF2, 210,000 iterations). It lives only in your browser.
                 Kinn never receives the key, the passphrase, or any way to
@@ -125,8 +125,8 @@ export function CreateWalletPage({ networkKey: _networkKey }: CreateWalletPagePr
       <Stack gap={8} className="py-20">
         <Stack gap={3}>
           <Display>Create your wallet.</Display>
-          <TextLarge style={{ color: '#6B7B6E' }}>
-            Kinn is the wallet. No MetaMask required. Your key is generated,
+          <TextLarge style={{ color: 'var(--color-soft)' }}>
+            Kinn is the wallet. No browser extension needed. Your key is generated,
             encrypted, and stored only on this device.
           </TextLarge>
         </Stack>

@@ -184,7 +184,7 @@ function adaptActivity(raw: RawActivityEntry): VaultActivityEvent {
     timestamp: 0,
     txHash: raw.transactionHash,
     blockNumber: raw.blockNumber,
-    data: { ...(raw.values ?? {}), owner: raw.owner, contract: raw.address, logIndex: raw.logIndex },
+    data: { ...raw.values, owner: raw.owner, contract: raw.address, logIndex: raw.logIndex },
   };
 }
 

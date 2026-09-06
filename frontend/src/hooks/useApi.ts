@@ -9,7 +9,6 @@
 
 import { useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { JsonRpcProvider } from 'ethers';
 import type {
   NetworkKey,
   PreparedTransaction,
@@ -20,11 +19,9 @@ import type {
   KeyHandle,
   GeneratedKey,
   SignableTransaction,
-  TransactionStatus,
 } from '@/types';
 import { createApiClient, ApiClientError } from '@/lib/api';
 import { contractWrites, ETH_SENTINEL } from '@/lib/contract';
-import { NETWORKS } from '@/lib/config';
 import { LocalEncryptedKeyManager } from '@/lib/keymanager/LocalEncryptedKeyManager';
 import type { TypedDataDomain, TypedDataField } from 'ethers';
 import { queryClient, AuthContext, type AuthState } from './AuthContext';
@@ -102,15 +99,6 @@ export function useDistributionInfo(owner: string | null, networkKey: NetworkKey
   });
 }
 
-export function useWalletBalances(networkKey: NetworkKey) {
-  const api = useApi(networkKey);
-  return useQuery({
-    queryKey: ['walletBalances', networkKey],
-    queryFn: () => api.wallet.getBalances(),
-    refetchInterval: 15_000,
-  });
-}
-
 export function useAssets(networkKey: NetworkKey) {
   const api = useApi(networkKey);
   return useQuery({
@@ -143,17 +131,6 @@ export function useUpdateBeneficiaries(owner: string, networkKey: NetworkKey) {
   const api = useApi(networkKey);
   return useMutation({
     mutationFn: (request: UpdateBeneficiariesRequest) => api.vault.updateBeneficiaries(owner, request),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['beneficiaries', networkKey, owner] });
-      queryClient.invalidateQueries({ queryKey: ['vaultStatus', networkKey, owner] });
-    },
-  });
-}
-
-export function useRemoveBeneficiaries(owner: string, networkKey: NetworkKey) {
-  const api = useApi(networkKey);
-  return useMutation({
-    mutationFn: () => api.vault.removeBeneficiaries(owner),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['beneficiaries', networkKey, owner] });
       queryClient.invalidateQueries({ queryKey: ['vaultStatus', networkKey, owner] });
@@ -274,32 +251,6 @@ export function useSimulateTransaction(networkKey: NetworkKey) {
   return useMutation({
     mutationFn: ({ prepared }: { prepared: PreparedTransaction }) =>
       api.transactions.simulate(prepared),
-  });
-}
-
-/** Receipt polling via the public RPC (the backend never reports tx status). */
-export function useTransactionStatus(hash: string | null, networkKey: NetworkKey) {
-  const rpcUrl = NETWORKS[networkKey].rpcUrl;
-  return useQuery({
-    queryKey: ['txStatus', networkKey, hash],
-    queryFn: async (): Promise<TransactionStatus | null> => {
-      if (!hash) return null;
-      const provider = new JsonRpcProvider(rpcUrl);
-      const receipt = await provider.getTransactionReceipt(hash);
-      if (!receipt) return { hash, status: 'pending' };
-      const ok = receipt.status === 1;
-      return {
-        hash,
-        status: ok ? 'confirmed' : 'failed',
-        blockNumber: receipt.blockNumber,
-        receipt: { status: receipt.status ?? 0, gasUsed: receipt.gasUsed.toString() },
-      };
-    },
-    enabled: !!hash,
-    refetchInterval: (query) => {
-      const data = query.state.data;
-      return data?.status === 'pending' ? 5_000 : false;
-    },
   });
 }
 

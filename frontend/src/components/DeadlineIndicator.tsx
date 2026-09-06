@@ -44,7 +44,7 @@ export function DeadlineIndicator({ deadline, label, showLabel = true }: Deadlin
             {info.isOverdue || info.isCritical ? (
               <AlertTriangle size={16} color="var(--color-destructive)" />
             ) : (
-              <Clock size={16} color="#6B7B6E" />
+              <Clock size={16} color="var(--color-soft)" />
             )}
             <span className="text-label">
               {label ?? (info.isOverdue ? 'Overdue' : 'Time remaining')}

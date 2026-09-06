@@ -93,7 +93,7 @@ export function Section({ title, description, action, children, className }: Sec
         <Row justify="between" align="baseline">
           <Stack gap={1}>
             {title && <h2 className="text-headline">{title}</h2>}
-            {description && <p className="text-body-sm" style={{ color: '#6B7B6E' }}>{description}</p>}
+            {description && <p className="text-body-sm" style={{ color: 'var(--color-soft)' }}>{description}</p>}
           </Stack>
           {action}
         </Row>

@@ -41,7 +41,7 @@ export WALLET_CALLBACK_SECRET="<shared wallet and Telegram callback secret>"
 
 Never commit the deployer or relayer private key.
 
-For the hosted authorization page, configure `WALLET_APP_URL` and the same `WALLET_CALLBACK_SECRET` in the wallet and Telegram environments. Add `WALLETCONNECT_PROJECT_ID` from Reown Cloud to enable WalletConnect; browser MetaMask remains available without it.
+For the hosted authorization page, configure `WALLET_APP_URL` and the same `WALLET_CALLBACK_SECRET` in the wallet and Telegram environments. Add `WALLETCONNECT_PROJECT_ID` from Reown Cloud to enable WalletConnect; a generic injected browser wallet works without it.
 
 ## Deploy
 
@@ -72,7 +72,7 @@ After deployment, configure the backend deployment registry with the confirmed c
 
 1. Send `/connect <network> <wallet>` in Telegram.
 2. Open the generated authorization URL and verify its network and wallet details.
-3. Test browser MetaMask, then test WalletConnect after configuring the Reown project ID.
+3. Test with a generic injected browser wallet, then test WalletConnect after configuring the Reown project ID.
 4. Return the generated `/verify <nonce> <signature>` command to Telegram.
 5. Prepare `/checkin` or another write and sign it from the authorization page.
 6. Confirm the transaction on-chain and confirm that Telegram receives the secure callback message.

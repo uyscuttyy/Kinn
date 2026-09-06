@@ -55,7 +55,7 @@ export function Modal({ isOpen, onClose, title, description, children, size = 'm
           >
             <div className="flex flex-col" style={{ gap: 'var(--space-1)' }}>
               {title && <h3 className="text-headline" style={{ fontSize: '1.25rem' }}>{title}</h3>}
-              {description && <p className="text-body-sm" style={{ color: '#6B7B6E' }}>{description}</p>}
+              {description && <p className="text-body-sm" style={{ color: 'var(--color-soft)' }}>{description}</p>}
             </div>
             {!hideClose && (
               <button

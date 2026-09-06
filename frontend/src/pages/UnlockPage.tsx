@@ -59,7 +59,7 @@ export function UnlockPage({ networkKey: _networkKey }: UnlockPageProps) {
         <Stack gap={8} className="py-20">
           <Stack gap={3}>
             <Display>No wallets on this device.</Display>
-            <TextLarge style={{ color: '#6B7B6E' }}>
+            <TextLarge style={{ color: 'var(--color-soft)' }}>
               Wallets are encrypted on the device where they were created.
               Create a new one to get started.
             </TextLarge>
@@ -86,17 +86,17 @@ export function UnlockPage({ networkKey: _networkKey }: UnlockPageProps) {
               width: 64,
               height: 64,
               borderRadius: '50%',
-              backgroundColor: 'rgb(115 146 183 / 0.15)',
+              backgroundColor: 'rgb(64 86 244 / 0.15)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: 'var(--color-brand)',
+              color: 'var(--color-primary)',
             }}
           >
             <Unlock size={32} strokeWidth={1.5} />
           </div>
           <Display>Unlock your wallet.</Display>
-          <TextLarge style={{ color: '#6B7B6E' }}>
+          <TextLarge style={{ color: 'var(--color-soft)' }}>
             Enter your passphrase to decrypt and use the key on this device.
           </TextLarge>
         </Stack>
@@ -120,9 +120,9 @@ export function UnlockPage({ networkKey: _networkKey }: UnlockPageProps) {
                         padding: 'var(--space-3) var(--space-4)',
                       }}
                     >
-                      <Key size={16} color="var(--color-brand)" />
+                      <Key size={16} color="var(--color-primary)" />
                       <span>{k.label ?? 'Unnamed wallet'}</span>
-                      <TextSmall style={{ marginLeft: 'auto', color: '#6B7B6E' }}>
+                      <TextSmall style={{ marginLeft: 'auto', color: 'var(--color-soft)' }}>
                         {new Date(k.createdAt * 1000).toLocaleDateString()}
                       </TextSmall>
                     </button>
@@ -132,7 +132,7 @@ export function UnlockPage({ networkKey: _networkKey }: UnlockPageProps) {
             ) : (
               <Card padding="sm" variant="flat">
                 <Row gap={2} align="center">
-                  <Key size={16} color="var(--color-brand)" />
+                  <Key size={16} color="var(--color-primary)" />
                   <Text style={{ fontWeight: 500 }}>
                     {keys[0].label ?? 'Unnamed wallet'}
                   </Text>

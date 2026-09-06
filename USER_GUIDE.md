@@ -126,9 +126,8 @@ transactions. The reserve is yours: withdraw it any time before a trigger.
 - Kinn's servers prepare your transactions but can never sign, move, or
   freeze anything. Every movement of funds requires your signature, verified
   by the contract itself.
-- Always check the receiving address on MetaMask-style prompts if you use a
-  fallback wallet, and confirm you are on the correct network (Base Sepolia
-  during testnet) before signing.
+- Always confirm you are on the correct network (Base Sepolia
+  during testnet) before signing any transaction.
 
 ## Troubleshooting
 

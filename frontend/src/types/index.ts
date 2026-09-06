@@ -182,19 +182,6 @@ export type {
 } from '@/lib/keymanager/types';
 export { KeyManagerError } from '@/lib/keymanager/types';
 
-/** EIP-1193 provider (browser wallet: MetaMask, Rabby, etc.) */
-export interface Eip1193Provider {
-  request(args: { method: string; params?: unknown[] }): Promise<unknown>;
-  on?(event: 'accountsChanged' | 'chainChanged' | 'disconnect', handler: (...args: unknown[]) => void): void;
-  removeListener?(event: string, handler: (...args: unknown[]) => void): void;
-}
-
-declare global {
-  interface Window {
-    ethereum?: Eip1193Provider;
-  }
-}
-
 /** Signing page payload types (from backend/wallet-client/client.ts) */
 export type SigningPayloadKind = 'wallet_challenge' | 'transaction';
 

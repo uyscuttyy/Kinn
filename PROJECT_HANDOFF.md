@@ -15,7 +15,7 @@ Telegram user
   -> Telegram bot and optional AI parser
   -> non-custodial backend
   -> wallet challenge or unsigned transaction
-  -> browser wallet / MetaMask / WalletConnect
+  -> browser wallet / WalletConnect
   -> KinnVault contract
   -> ERC-20 RWA or crypto token
 ```
@@ -32,7 +32,7 @@ Automation gas is reimbursed from a native-token reserve funded by the vault own
 - Phases 6-11A: backend, wallet authentication, Telegram, optional AI, reminders, automation, retries, and automation reserve.
 - Phase 12: X Layer testnet lifecycle, Telegram automation lifecycle, and failed-transfer delayed-retry scenario completed.
 - Phase 13: security and UX review completed with residual risks documented.
-- Hosted wallet: Render deployment with MetaMask/browser wallets, mobile MetaMask handoff, secure Telegram callbacks, and optional WalletConnect.
+- Hosted wallet: Render deployment with generic browser wallets, secure Telegram callbacks, and optional WalletConnect.
 
 ## Resume Order
 
