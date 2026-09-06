@@ -1,9 +1,20 @@
 services:
   - type: web
-    name: kinn-wallet
+    name: kinn-app
     runtime: node
     plan: free
-    buildCommand: npm install && npm run build
-    startCommand: npm run wallet:start
+    buildCommand: npm install && cd frontend && npm install && npm run build && cd ..
+    startCommand: npm run api:serve
     healthCheckPath: /health
     autoDeploy: true
+    envVars:
+      - key: KINN_NETWORKS
+        value: base-sepolia
+      - key: KINN_BASE_SEPOLIA_RPC_URL
+        value: https://sepolia.base.org
+      - key: KINN_BASE_SEPOLIA_CHAIN_ID
+        value: 84532
+      - key: KINN_BASE_SEPOLIA_CONTRACT_ADDRESS
+        value: 0x672778401F0F550284347Bf32aB883B4a2A72933
+      - key: KINN_DB_DIR
+        value: data/db
