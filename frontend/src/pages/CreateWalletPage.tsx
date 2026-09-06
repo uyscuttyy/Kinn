@@ -126,7 +126,7 @@ export function CreateWalletPage({ networkKey: _networkKey }: CreateWalletPagePr
         <Stack gap={3}>
           <Display>Create your wallet.</Display>
           <TextLarge style={{ color: '#6B7B6E' }}>
-            Kinn is the wallet. No MetaMask required. Your key is generated,
+            Kinn is the wallet. No browser extension needed. Your key is generated,
             encrypted, and stored only on this device.
           </TextLarge>
         </Stack>

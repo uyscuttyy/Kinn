@@ -96,7 +96,7 @@ export function SecurityPage({ networkKey }: SecurityPageProps) {
             {keys.length === 0 ? (
               <EmptyState
                 title="No KeyManager wallets"
-                description="Create a first-party wallet to sign vault transactions directly — no MetaMask required."
+                description="Create a Kinn wallet to sign vault transactions directly — no browser extension needed."
                 action={
                   <Button variant="primary" onClick={() => navigate('/create-wallet')}>
                     Create wallet
@@ -175,49 +175,6 @@ export function SecurityPage({ networkKey }: SecurityPageProps) {
               </Stack>
             )}
           </Stack>
-        </Card>
-
-        {/* Fallback wallets */}
-        <Card padding="lg">
-          <Stack gap={4}>
-            <TextSmall style={{ color: '#6B7B6E', letterSpacing: '0.1em' }}>
-              FALLBACK WALLETS
-            </TextSmall>
-
-              <Row gap={3} align="center" justify="between" wrap>
-                <Stack gap={1}>
-                  <Text style={{ fontWeight: 500 }}>MetaMask</Text>
-                  <TextSmall style={{ color: '#6B7B6E' }}>
-                    Browser extension. Use if your browser has it installed.
-                  </TextSmall>
-                </Stack>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => showToast('MetaMask integration requires a browser extension', 'info')}
-                >
-                  <ExternalLink size={14} />
-                  Connect
-                </Button>
-              </Row>
-
-              <Row gap={3} align="center" justify="between" wrap>
-                <Stack gap={1}>
-                  <Text style={{ fontWeight: 500 }}>WalletConnect</Text>
-                  <TextSmall style={{ color: '#6B7B6E' }}>
-                    Connect mobile wallets via QR code.
-                  </TextSmall>
-                </Stack>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => showToast('WalletConnect requires a project ID', 'info')}
-                >
-                  <ExternalLink size={14} />
-                  Connect
-                </Button>
-              </Row>
-            </Stack>
         </Card>
 
         {/* Vault contract info */}

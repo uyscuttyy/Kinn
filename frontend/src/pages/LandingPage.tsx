@@ -40,8 +40,8 @@ export function LandingPage() {
             <Link to="/create-wallet">
               <Button variant="primary" size="lg">Create Kinn wallet</Button>
             </Link>
-            <Link to="/connect">
-              <Button variant="secondary" size="lg">Use MetaMask instead</Button>
+            <Link to="/unlock">
+              <Button variant="secondary" size="lg">Unlock existing wallet</Button>
             </Link>
           </Row>
         </Stack>

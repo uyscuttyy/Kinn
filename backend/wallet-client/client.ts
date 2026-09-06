@@ -19,8 +19,6 @@ const details = document.querySelector<HTMLElement>("#details")!;
 const copy = document.querySelector<HTMLButtonElement>("#copy")!;
 const explorer = document.querySelector<HTMLAnchorElement>("#explorer")!;
 const projectId = window.KINN_WALLET_CONFIG?.walletConnectProjectId?.trim() ?? "";
-const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-const metaMaskDeepLink = "https://metamask.app.link/dapp/" + location.href.replace(/^https?:\/\//, "");
 let copyText = "";
 
 const addDetail = (label: string, value: string) => {
@@ -72,7 +70,6 @@ if (payload.kind === "wallet_challenge") {
   addDetail("Value", payload.transaction.value || "0x0");
 } else throw new Error("Unknown Kinn authorization request.");
 if (projectId) walletConnectButton.hidden = false;
-if (!window.ethereum && mobile) browserButton.textContent = "Open in MetaMask";
 
 const waitForReceipt = async (provider: Eip1193Provider, txHash: string) => {
   for (let attempt = 0; attempt < 90; attempt += 1) {
@@ -124,8 +121,7 @@ const run = async (button: HTMLButtonElement, providerFactory: () => Promise<Eip
 };
 browserButton.addEventListener("click", () => run(browserButton, async () => {
   if (window.ethereum) return window.ethereum;
-  if (mobile) { location.href = metaMaskDeepLink; return new Promise<Eip1193Provider>(() => {}); }
-  throw new Error("No browser wallet was detected. Install MetaMask or use WalletConnect.");
+  throw new Error("No browser wallet was detected. Install a browser wallet or use WalletConnect.");
 }));
 walletConnectButton.addEventListener("click", () => run(walletConnectButton, async () => {
   if (!projectId) throw new Error("WalletConnect is not configured.");

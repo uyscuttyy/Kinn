@@ -57,8 +57,8 @@ the API; all writes are prepared by the API and signed in the wallet.
 210,000 iterations) stored only in the browser's localStorage; raw key
 material exists transiently and is zeroized after use; keys auto-lock when
 the tab hides. Signs EIP-712 login challenges, EIP-191 messages, and offline
-transaction signing with locally-filled nonce/gas/fees. MetaMask and
-WalletConnect remain as fallback signers only.
+transaction signing with locally-filled nonce/gas/fees. All signing happens in
+the first-party KeyManager wallet; there is no browser-extension dependency.
 
 ## Trust model (the core guarantee)
 

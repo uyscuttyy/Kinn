@@ -61,7 +61,6 @@ const html = `<!doctype html>
     const details = document.querySelector('#details');
     const copy = document.querySelector('#copy');
     const explorer = document.querySelector('#explorer');
-    const metaMaskDeepLink = 'https://metamask.app.link/dapp/' + location.href.replace(/^https?:\\/\\//, '');
     let copyText = '';
     const addDetail = (label, value) => {
       const row = document.createElement('div');
@@ -108,7 +107,7 @@ const html = `<!doctype html>
       if (initialPayload.kind === 'wallet_challenge') {
         title.textContent = 'Kinn wallet verification';
         summary.textContent = 'Sign a wallet ownership message. This signature cannot move funds.';
-        button.textContent = 'Connect MetaMask and sign';
+        button.textContent = 'Connect browser wallet and sign';
         details.hidden = false;
         addDetail('Network', initialPayload.challenge.deploymentKey);
         addDetail('Wallet', initialPayload.challenge.message.wallet);
@@ -116,16 +115,12 @@ const html = `<!doctype html>
       } else if (initialPayload.kind === 'transaction') {
         title.textContent = 'Kinn transaction';
         summary.textContent = 'Review and submit this Kinn transaction on chain ' + initialPayload.transaction.chainId + '.';
-        button.textContent = 'Review in MetaMask';
+        button.textContent = 'Review in browser wallet';
         details.hidden = false;
         addDetail('Network', 'Chain ' + initialPayload.transaction.chainId);
-        addDetail('From', initialPayload.transaction.from || 'MetaMask account');
+        addDetail('From', initialPayload.transaction.from || 'Connected account');
         addDetail('To', initialPayload.transaction.to);
         addDetail('Value', initialPayload.transaction.value || '0x0');
-        if (!window.ethereum && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-          button.textContent = 'Open in MetaMask';
-          summary.textContent = 'Continue in the MetaMask mobile app to review this transaction.';
-        }
       } else {
         throw new Error('Unknown Kinn authorization request.');
       }
@@ -137,11 +132,7 @@ const html = `<!doctype html>
       button.disabled = true;
       try {
         if (!window.ethereum) {
-          if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-            location.href = metaMaskDeepLink;
-            return;
-          }
-          throw new Error('MetaMask was not detected in this browser.');
+          throw new Error('No browser wallet was detected in this browser.');
         }
         const payload = initialPayload;
         if (payload.kind === 'transaction') {
@@ -154,7 +145,7 @@ const html = `<!doctype html>
           const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
           const account = accounts[0];
           if (account.toLowerCase() !== transaction.from.toLowerCase()) {
-            throw new Error('MetaMask is connected to a different wallet: ' + account);
+            throw new Error('The connected wallet does not match the expected wallet: ' + account);
           }
           const txHash = await ethereum.request({
             method: 'eth_sendTransaction',
@@ -197,7 +188,7 @@ const html = `<!doctype html>
         const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
         const account = accounts[0];
         if (account.toLowerCase() !== challenge.message.wallet.toLowerCase()) {
-          throw new Error('MetaMask is connected to a different wallet: ' + account);
+          throw new Error('The connected wallet does not match the expected wallet: ' + account);
         }
         const typedData = {
           domain: challenge.domain,

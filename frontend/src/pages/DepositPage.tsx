@@ -59,7 +59,7 @@ export function DepositPage({ networkKey }: DepositPageProps) {
       const weiAmount = BigInt(intPart + paddedFrac).toString();
 
       if (!isNativeEth(selectedAsset)) {
-        // ERC-20: approve first, then deposit — each signed in MetaMask
+        // ERC-20: approve first, then deposit — each signed by the Kinn wallet
         showToast('Approving token spending…', 'info');
         const approveResult = await approveMutation.mutateAsync({
           token: selectedAsset.address,
