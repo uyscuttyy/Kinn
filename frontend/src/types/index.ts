@@ -1,4 +1,6 @@
-/** Kinn Frontend Types — mirrors backend API.md exactly */
+/** Kinn Frontend Types — normalized views over the real backend shapes.
+ * Raw backend responses are adapted in lib/api.ts; pages and hooks only
+ * ever see the normalized types below. */
 
 export type NetworkKey = 'base-sepolia' | 'base';
 
@@ -17,18 +19,16 @@ export interface Asset {
   native: boolean;
 }
 
+/** Unsigned transaction as returned by the backend (hex value, no nonce/gas). */
 export interface PreparedTransaction {
   chainId: number;
   to: string;
   data: string;
   value: string;
-  from: string;
-  gasLimit: string;
-  maxFeePerGas: string;
-  maxPriorityFeePerGas: string;
-  nonce: string;
+  from?: string;
 }
 
+/** Normalized vault view (state is derived client-side from chain flags). */
 export interface VaultStatus {
   owner: string;
   vaultAddress: string;
@@ -40,10 +40,15 @@ export interface VaultStatus {
   balances: Record<string, string>; // token address -> balance (wei)
   active: boolean;
   inheritanceTriggered: boolean;
+  missedCheckIns: number;
+  inheritanceEligible: boolean;
+  eligibilityDeadline: string; // lastCheckIn + interval * maxMissed
+  nextExpectedCheckIn: string;
 }
 
 export interface VaultActivityEvent {
   type: string;
+  /** 0 when the backend has no timestamp (indexed events carry block numbers). */
   timestamp: number;
   txHash: string;
   blockNumber: number;
@@ -64,14 +69,13 @@ export interface BeneficiariesResponse {
 export interface InheritanceInfo {
   eligibilityDeadline: string;    // unix timestamp (seconds)
   missedCheckIns: number;
-  state: InheritanceState;
-  nextExpectedCheckIn: string;    // unix timestamp (seconds)
+  maxMissedCheckIns: number;
+  inheritanceEligible: boolean;
 }
 
+/** Raw backend distribution view: per-asset remaining balances. */
 export interface DistributionInfo {
-  processed: Record<string, boolean>;           // token address -> processed
-  pendingEntitlements: Record<string, PendingEntitlement[]>; // token -> []
-  distributedAmounts: Record<string, string>;   // token address -> total distributed
+  assets: Array<{ asset: string; balance: string }>;
 }
 
 export interface PendingEntitlement {
@@ -81,7 +85,17 @@ export interface PendingEntitlement {
 }
 
 export interface WalletBalances {
-  balances: Record<string, string>; // token address -> balance (wei)
+  balances: Record<string, string>; // token address -> raw balance (wei)
+  list: AssetBalanceEntry[];
+}
+
+export interface AssetBalanceEntry {
+  symbol: string;
+  address: string;
+  decimals: number;
+  native: boolean;
+  rawBalance: string;
+  balance: string;
 }
 
 export interface WalletTransaction {
@@ -95,8 +109,10 @@ export interface WalletTransaction {
   status: 'pending' | 'confirmed' | 'failed';
 }
 
+/** Backend challenge: { challenge: { deploymentKey, domain, types, primaryType, message } }. */
 export interface AuthChallenge {
   challenge: {
+    deploymentKey: string;
     domain: {
       name: string;
       version: string;
@@ -107,10 +123,10 @@ export interface AuthChallenge {
     primaryType: string;
     message: {
       wallet: string;
-      user: string;
+      telegramUserId: string;
       nonce: string;
-      issuedAt: number;
-      expiresAt: number;
+      issuedAt: string;
+      expiresAt: string;
     };
   };
 }
@@ -120,30 +136,31 @@ export interface AuthVerifyResponse {
   expiresAt: number;
 }
 
+/** Backend session: { deploymentKey, user, wallet, expiresAt } (no chainId). */
 export interface SessionInfo {
+  deploymentKey: string;
+  user: string;
   wallet: string;
-  chainId: number;
   expiresAt: number;
 }
 
 export interface ApiError {
-  error: {
-    code: string;
-    message: string;
-  };
+  error: string;
+  message: string;
 }
 
 export interface SimulationResult {
   success: boolean;
   revert?: string;
-  returnValue?: string;
+  note?: string;
 }
 
 export interface TransactionSubmitResponse {
-  hash: string;
-  status: 'pending';
+  status: string;
+  note?: string;
 }
 
+/** Frontend receipt view, built from the ethers provider (not the backend). */
 export interface TransactionStatus {
   hash: string;
   status: 'pending' | 'confirmed' | 'failed';
@@ -155,48 +172,15 @@ export interface TransactionStatus {
   };
 }
 
-/** KeyManager types (from backend/wallet-client/keymanager/types.ts) */
-export interface KeyHandle {
-  id: string;
-  createdAt: number;
-  label?: string;
-}
-
-export interface GeneratedKey extends KeyHandle {
-  address: string;
-}
-
-export interface SignableTransaction {
-  to?: string;
-  from?: string;
-  nonce?: number | string;
-  gasLimit?: number | string;
-  gasPrice?: string;
-  maxFeePerGas?: string;
-  maxPriorityFeePerGas?: string;
-  data?: string;
-  value?: string;
-  chainId?: number;
-  type?: number;
-}
-
-export type KeyManagerErrorCode =
-  | 'KEY_NOT_FOUND'
-  | 'KEY_LOCKED'
-  | 'WRONG_PASSPHRASE'
-  | 'STORAGE_UNAVAILABLE'
-  | 'INVALID_INPUT'
-  | 'CRYPTO_UNAVAILABLE';
-
-export class KeyManagerError extends Error {
-  readonly code: KeyManagerErrorCode;
-
-  constructor(code: KeyManagerErrorCode, message: string) {
-    super(message);
-    this.name = 'KeyManagerError';
-    this.code = code;
-  }
-}
+/** KeyManager types — single source in lib/keymanager (vendored Phase 5). */
+export type {
+  KeyHandle,
+  GeneratedKey,
+  SignableTransaction,
+  KeyManager,
+  KeyManagerErrorCode,
+} from '@/lib/keymanager/types';
+export { KeyManagerError } from '@/lib/keymanager/types';
 
 /** EIP-1193 provider (browser wallet: MetaMask, Rabby, etc.) */
 export interface Eip1193Provider {
@@ -232,10 +216,10 @@ export interface TransactionPayload extends SigningPayloadBase {
 
 export type SigningPayload = WalletChallengePayload | TransactionPayload;
 
-/** Create vault request */
+/** Create vault request (sent as { interval, maxMisses, beneficiaries }). */
 export interface CreateVaultRequest {
-  checkInInterval: number;        // seconds
-  maxMissedCheckIns: number;      // 1-5
+  intervalSeconds: number;       // seconds
+  maxMisses: number;             // 1-5
   beneficiaries: Array<{
     account: string;
     allocationBps: number;

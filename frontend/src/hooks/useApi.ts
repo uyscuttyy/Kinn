@@ -1,7 +1,15 @@
-/** React hooks for data fetching, mutations, and wallet (KeyManager) */
+/**
+ * React hooks: auth session, chain reads, owner writes, KeyManager wallet.
+ *
+ * Write paths with no dedicated backend endpoint (settings, reserve,
+ * approve, deposit, withdraw) are encoded client-side via lib/contract.ts
+ * and sent through POST /transactions/prepare. The KeyManager signs; the
+ * frontend broadcasts via an ethers provider (the backend never broadcasts).
+ */
 
 import { useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { JsonRpcProvider } from 'ethers';
 import type {
   NetworkKey,
   PreparedTransaction,
@@ -12,11 +20,14 @@ import type {
   KeyHandle,
   GeneratedKey,
   SignableTransaction,
+  TransactionStatus,
 } from '@/types';
-import { createApiClient } from '@/lib/api';
-import { parseRevertReason } from '@/utils/format';
+import { createApiClient, ApiClientError } from '@/lib/api';
+import { contractWrites, ETH_SENTINEL } from '@/lib/contract';
+import { NETWORKS } from '@/lib/config';
+import { LocalEncryptedKeyManager } from '@/lib/keymanager/LocalEncryptedKeyManager';
+import type { TypedDataDomain, TypedDataField } from 'ethers';
 import { queryClient, AuthContext, type AuthState } from './AuthContext';
-import { useExternalSigner } from './useExternalSigner';
 
 export { queryClient };
 
@@ -39,7 +50,15 @@ export function useVaultStatus(owner: string | null, networkKey: NetworkKey) {
   const api = useApi(networkKey);
   return useQuery({
     queryKey: ['vaultStatus', networkKey, owner],
-    queryFn: () => (owner ? api.vault.getStatus(owner) : null),
+    queryFn: async () => {
+      if (!owner) return null;
+      try {
+        return await api.vault.getStatus(owner);
+      } catch (err) {
+        if (err instanceof ApiClientError && err.isNoVault) return null;
+        throw err;
+      }
+    },
     enabled: !!owner,
     refetchInterval: 10_000,
   });
@@ -49,7 +68,7 @@ export function useVaultActivity(owner: string | null, networkKey: NetworkKey, l
   const api = useApi(networkKey);
   return useQuery({
     queryKey: ['vaultActivity', networkKey, owner, limit],
-    queryFn: () => (owner ? api.vault.getActivity(owner, { limit }) : { events: [], nextCursor: undefined }),
+    queryFn: () => (owner ? api.vault.getActivity(owner) : { events: [] }),
     enabled: !!owner,
   });
 }
@@ -101,7 +120,7 @@ export function useAssets(networkKey: NetworkKey) {
   });
 }
 
-// Mutations
+// Mutations — endpoint-backed writes
 export function useCreateVault(networkKey: NetworkKey) {
   const api = useApi(networkKey);
   return useMutation({
@@ -142,66 +161,6 @@ export function useRemoveBeneficiaries(owner: string, networkKey: NetworkKey) {
   });
 }
 
-export function useUpdateSettings(owner: string, networkKey: NetworkKey) {
-  const api = useApi(networkKey);
-  return useMutation({
-    mutationFn: (request: UpdateSettingsRequest) => api.vault.updateSettings(owner, request),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vaultStatus', networkKey, owner] });
-      queryClient.invalidateQueries({ queryKey: ['inheritance', networkKey, owner] });
-    },
-  });
-}
-
-export function useTopUpReserve(owner: string, networkKey: NetworkKey) {
-  const api = useApi(networkKey);
-  return useMutation({
-    mutationFn: (amount: string) => api.vault.topUpReserve(owner, amount),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vaultStatus', networkKey, owner] });
-    },
-  });
-}
-
-export function useWithdrawReserve(owner: string, networkKey: NetworkKey) {
-  const api = useApi(networkKey);
-  return useMutation({
-    mutationFn: (amount: string) => api.vault.withdrawReserve(owner, amount),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vaultStatus', networkKey, owner] });
-    },
-  });
-}
-
-export function useApproveToken(owner: string, networkKey: NetworkKey) {
-  const api = useApi(networkKey);
-  return useMutation({
-    mutationFn: ({ token, amount }: { token: string; amount: string }) => api.vault.approveToken(owner, token, amount),
-  });
-}
-
-export function useDeposit(owner: string, networkKey: NetworkKey) {
-  const api = useApi(networkKey);
-  return useMutation({
-    mutationFn: (request: DepositRequest) => api.vault.deposit(owner, request),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vaultStatus', networkKey, owner] });
-      queryClient.invalidateQueries({ queryKey: ['walletBalances', networkKey] });
-    },
-  });
-}
-
-export function useWithdraw(owner: string, networkKey: NetworkKey) {
-  const api = useApi(networkKey);
-  return useMutation({
-    mutationFn: (request: DepositRequest) => api.vault.withdraw(owner, request),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vaultStatus', networkKey, owner] });
-      queryClient.invalidateQueries({ queryKey: ['walletBalances', networkKey] });
-    },
-  });
-}
-
 export function useCloseVault(owner: string, networkKey: NetworkKey) {
   const api = useApi(networkKey);
   return useMutation({
@@ -212,99 +171,228 @@ export function useCloseVault(owner: string, networkKey: NetworkKey) {
   });
 }
 
+// Mutations — client-encoded writes (no dedicated endpoint; via /transactions/prepare)
+async function resolveVault(api: ReturnType<typeof createApiClient>, owner: string): Promise<string> {
+  const status = await api.vault.getStatus(owner);
+  return status.vaultAddress;
+}
+
+export function useUpdateSettings(owner: string, networkKey: NetworkKey) {
+  const api = useApi(networkKey);
+  return useMutation({
+    mutationFn: async (request: UpdateSettingsRequest) => {
+      const status = await api.vault.getStatus(owner);
+      const interval = request.checkInInterval ?? parseInt(status.checkInInterval, 10);
+      const misses = request.maxMissedCheckIns ?? status.maxMissedCheckIns;
+      const prepared = await contractWrites.updateSettings(api, status.vaultAddress, interval, misses, owner);
+      return { prepared };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vaultStatus', networkKey, owner] });
+      queryClient.invalidateQueries({ queryKey: ['inheritance', networkKey, owner] });
+    },
+  });
+}
+
+export function useTopUpReserve(owner: string, networkKey: NetworkKey) {
+  const api = useApi(networkKey);
+  return useMutation({
+    mutationFn: async (amount: string) => {
+      const vault = await resolveVault(api, owner);
+      const prepared = await contractWrites.topUpReserve(api, vault, amount, owner);
+      return { prepared };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vaultStatus', networkKey, owner] });
+    },
+  });
+}
+
+export function useWithdrawReserve(owner: string, networkKey: NetworkKey) {
+  const api = useApi(networkKey);
+  return useMutation({
+    mutationFn: async (amount: string) => {
+      const vault = await resolveVault(api, owner);
+      const prepared = await contractWrites.withdrawReserve(api, vault, amount, owner);
+      return { prepared };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vaultStatus', networkKey, owner] });
+    },
+  });
+}
+
+export function useApproveToken(owner: string, networkKey: NetworkKey) {
+  const api = useApi(networkKey);
+  return useMutation({
+    mutationFn: async ({ token, amount }: { token: string; amount: string }) => {
+      const vault = await resolveVault(api, owner);
+      const prepared = await contractWrites.approveToken(api, token, vault, amount, owner);
+      return { prepared };
+    },
+  });
+}
+
+function isNativeAsset(asset: string): boolean {
+  return asset.toLowerCase() === ETH_SENTINEL.toLowerCase();
+}
+
+export function useDeposit(owner: string, networkKey: NetworkKey) {
+  const api = useApi(networkKey);
+  return useMutation({
+    mutationFn: async (request: DepositRequest) => {
+      const vault = await resolveVault(api, owner);
+      const prepared = isNativeAsset(request.asset)
+        ? await contractWrites.depositETH(api, vault, request.amount, owner)
+        : await contractWrites.depositToken(api, vault, request.asset, request.amount, owner);
+      return { prepared };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vaultStatus', networkKey, owner] });
+      queryClient.invalidateQueries({ queryKey: ['walletBalances', networkKey] });
+    },
+  });
+}
+
+export function useWithdraw(owner: string, networkKey: NetworkKey) {
+  const api = useApi(networkKey);
+  return useMutation({
+    mutationFn: async (request: DepositRequest) => {
+      const vault = await resolveVault(api, owner);
+      const prepared = await contractWrites.withdraw(api, vault, request.asset, request.amount, owner);
+      return { prepared };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vaultStatus', networkKey, owner] });
+      queryClient.invalidateQueries({ queryKey: ['walletBalances', networkKey] });
+    },
+  });
+}
+
 export function useSimulateTransaction(networkKey: NetworkKey) {
   const api = useApi(networkKey);
   return useMutation({
-    mutationFn: ({ prepared, stateOverride }: { prepared: PreparedTransaction; stateOverride?: Record<string, unknown> }) =>
-      api.transactions.simulate(prepared, stateOverride),
+    mutationFn: ({ prepared }: { prepared: PreparedTransaction }) =>
+      api.transactions.simulate(prepared),
   });
 }
 
-export function useSubmitTransaction(networkKey: NetworkKey) {
-  const api = useApi(networkKey);
-  return useMutation({
-    mutationFn: (rawSignedTransaction: string) => api.transactions.submit(rawSignedTransaction),
-  });
-}
-
+/** Receipt polling via the public RPC (the backend never reports tx status). */
 export function useTransactionStatus(hash: string | null, networkKey: NetworkKey) {
-  const api = useApi(networkKey);
+  const rpcUrl = NETWORKS[networkKey].rpcUrl;
   return useQuery({
     queryKey: ['txStatus', networkKey, hash],
-    queryFn: () => (hash ? api.transactions.getStatus(hash) : null),
+    queryFn: async (): Promise<TransactionStatus | null> => {
+      if (!hash) return null;
+      const provider = new JsonRpcProvider(rpcUrl);
+      const receipt = await provider.getTransactionReceipt(hash);
+      if (!receipt) return { hash, status: 'pending' };
+      const ok = receipt.status === 1;
+      return {
+        hash,
+        status: ok ? 'confirmed' : 'failed',
+        blockNumber: receipt.blockNumber,
+        receipt: { status: receipt.status ?? 0, gasUsed: receipt.gasUsed.toString() },
+      };
+    },
     enabled: !!hash,
     refetchInterval: (query) => {
       const data = query.state.data;
-      const status = data?.status;
-      if (status === 'pending') return 5_000;
-      return false;
+      return data?.status === 'pending' ? 5_000 : false;
     },
   });
 }
 
 // ============================================================================
-// KeyManager Hook (First-party wallet)
-// The real KeyManager is bundled from backend/wallet-client/keymanager.
-// This is a browser placeholder; the real implementation would be loaded
-// via dynamic import in production.
+// KeyManager Hook (first-party Kinn wallet)
+// One shared LocalEncryptedKeyManager (localStorage-backed); unlock state is
+// shared across hook instances via a module-level store. Keys lock on tab hide.
 // ============================================================================
 
-interface KeyManagerInstance {
-  generate: (passphrase: string, label?: string) => Promise<GeneratedKey>;
-  getAddress: (id: string) => Promise<string>;
-  signMessage: (id: string, message: string) => Promise<string>;
-  signTransaction: (id: string, tx: SignableTransaction) => Promise<string>;
-  destroy: (id: string) => Promise<void>;
-  has: (id: string) => Promise<boolean>;
-  list: () => Promise<KeyHandle[]>;
-  unlock: (id: string, passphrase: string) => Promise<void>;
-  lock: (id: string) => void;
-  lockAll: () => void;
-  isUnlocked: (id: string) => boolean;
+let kmSingleton: LocalEncryptedKeyManager | null = null;
+let kmInitError: string | null = null;
+let unlockedIdStore: string | null = null;
+const unlockedListeners = new Set<(id: string | null) => void>();
+let lockHookInstalled = false;
+
+function getKm(): LocalEncryptedKeyManager {
+  if (!kmSingleton) {
+    if (kmInitError) throw new Error(kmInitError);
+    try {
+      kmSingleton = new LocalEncryptedKeyManager();
+    } catch (err) {
+      kmInitError = err instanceof Error ? err.message : 'KeyManager unavailable';
+      throw new Error(kmInitError);
+    }
+  }
+  return kmSingleton;
 }
 
-function createPlaceholderKeyManager(): KeyManagerInstance {
-  const notAvailable = (_msg?: string) =>
-    Promise.reject(
-      new Error('First-party KeyManager not bundled. Use MetaMask/WalletConnect for now.')
-    );
-  return {
-    generate: (p, l) => notAvailable(`generate(${p.length}, ${l})`),
-    getAddress: (id) => notAvailable(`getAddress(${id})`),
-    signMessage: (id, m) => notAvailable(`signMessage(${id}, ${m.length})`),
-    signTransaction: (id, t) => notAvailable(`signTransaction(${id}, ${JSON.stringify(t).length})`),
-    destroy: (id) => notAvailable(`destroy(${id})`),
-    has: async () => false,
-    list: async () => [],
-    unlock: (id, p) => notAvailable(`unlock(${id}, ${p.length})`),
-    lock: () => {},
-    lockAll: () => {},
-    isUnlocked: () => false,
+function setUnlockedStore(id: string | null) {
+  unlockedIdStore = id;
+  unlockedListeners.forEach((l) => l(id));
+}
+
+function installLockHook() {
+  if (lockHookInstalled || typeof window === 'undefined') return;
+  lockHookInstalled = true;
+  const lock = () => {
+    try {
+      kmSingleton?.lockAll();
+    } catch {
+      // ignore
+    }
+    setUnlockedStore(null);
   };
+  window.addEventListener('pagehide', lock);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') lock();
+  });
 }
 
 export function useKeyManager() {
   const [keys, setKeys] = useState<KeyHandle[]>([]);
-  const [unlockedKeyId, setUnlockedKeyId] = useState<string | null>(null);
+  const [unlockedKeyId, setUnlockedKeyId] = useState<string | null>(unlockedIdStore);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const kmRef = useRef<KeyManagerInstance | null>(null);
+  const kmRef = useRef<LocalEncryptedKeyManager | null>(null);
 
   useEffect(() => {
-    const km = createPlaceholderKeyManager();
-    kmRef.current = km;
-    km.list().then(setKeys).catch(() => {});
+    installLockHook();
+    try {
+      kmRef.current = getKm();
+      getKm()
+        .list()
+        .then(setKeys)
+        .catch((err) => setError(err instanceof Error ? err.message : 'Failed to list keys'));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'KeyManager unavailable');
+    }
+    const listener = (id: string | null) => setUnlockedKeyId(id);
+    unlockedListeners.add(listener);
+    return () => {
+      unlockedListeners.delete(listener);
+    };
+  }, []);
+
+  const refreshKeys = useCallback(async () => {
+    try {
+      setKeys(await getKm().list());
+    } catch {
+      // keep stale list
+    }
   }, []);
 
   const generate = useCallback(
-    async (passphrase: string, label?: string) => {
-      const km = kmRef.current;
-      if (!km) throw new Error('KeyManager not initialized');
+    async (passphrase: string, label?: string): Promise<GeneratedKey> => {
       setIsLoading(true);
       setError(null);
       try {
-        const generated = await km.generate(passphrase, label);
-        setKeys((prev) => [...prev, generated]);
+        const generated = await getKm().generate(passphrase, label);
+        // The fresh passphrase is known: unlock immediately for this session.
+        await getKm().unlock(generated.id, passphrase);
+        setUnlockedStore(generated.id);
+        await refreshKeys();
         return generated;
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to generate key');
@@ -313,84 +401,78 @@ export function useKeyManager() {
         setIsLoading(false);
       }
     },
-    []
+    [refreshKeys]
   );
 
-  const unlock = useCallback(
-    async (id: string, passphrase: string) => {
-      const km = kmRef.current;
-      if (!km) throw new Error('KeyManager not initialized');
-      setIsLoading(true);
-      setError(null);
-      try {
-        await km.unlock(id, passphrase);
-        setUnlockedKeyId(id);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to unlock key');
-        throw err;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    []
-  );
+  const unlock = useCallback(async (id: string, passphrase: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await getKm().unlock(id, passphrase);
+      setUnlockedStore(id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to unlock key');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   const lock = useCallback(
     (id: string) => {
-      const km = kmRef.current;
-      if (!km) return;
-      km.lock(id);
-      if (unlockedKeyId === id) setUnlockedKeyId(null);
+      try {
+        getKm().lock(id);
+      } catch {
+        // ignore
+      }
+      if (unlockedIdStore === id) setUnlockedStore(null);
     },
-    [unlockedKeyId]
+    []
   );
 
   const lockAll = useCallback(() => {
-    const km = kmRef.current;
-    if (!km) return;
-    km.lockAll();
-    setUnlockedKeyId(null);
+    try {
+      getKm().lockAll();
+    } catch {
+      // ignore
+    }
+    setUnlockedStore(null);
   }, []);
 
-  const signTransaction = useCallback(
-    async (id: string, tx: SignableTransaction) => {
-      const km = kmRef.current;
-      if (!km) throw new Error('KeyManager not initialized');
+  const signTransaction = useCallback(async (id: string, tx: SignableTransaction) => {
+    const km = kmRef.current ?? getKm();
+    if (!km.isUnlocked(id)) throw new Error('Key is locked');
+    return km.signTransaction(id, tx);
+  }, []);
+
+  const signMessage = useCallback(async (id: string, message: string) => {
+    const km = kmRef.current ?? getKm();
+    if (!km.isUnlocked(id)) throw new Error('Key is locked');
+    return km.signMessage(id, message);
+  }, []);
+
+  const signTypedData = useCallback(
+    async (
+      id: string,
+      domain: TypedDataDomain,
+      types: Record<string, TypedDataField[]>,
+      primaryType: string,
+      message: Record<string, unknown>
+    ) => {
+      const km = kmRef.current ?? getKm();
       if (!km.isUnlocked(id)) throw new Error('Key is locked');
-      return km.signTransaction(id, tx);
+      return km.signTypedData(id, domain, types, primaryType, message);
     },
     []
   );
 
-  const signMessage = useCallback(
-    async (id: string, message: string) => {
-      const km = kmRef.current;
-      if (!km) throw new Error('KeyManager not initialized');
-      if (!km.isUnlocked(id)) throw new Error('Key is locked');
-      return km.signMessage(id, message);
-    },
-    []
-  );
+  const getAddress = useCallback(async (id: string) => getKm().getAddress(id), []);
 
-  const getAddress = useCallback(
-    async (id: string) => {
-      const km = kmRef.current;
-      if (!km) throw new Error('KeyManager not initialized');
-      return km.getAddress(id);
-    },
-    []
-  );
-
-  const destroy = useCallback(
-    async (id: string) => {
-      const km = kmRef.current;
-      if (!km) throw new Error('KeyManager not initialized');
-      await km.destroy(id);
-      setKeys((prev) => prev.filter((k) => k.id !== id));
-      if (unlockedKeyId === id) setUnlockedKeyId(null);
-    },
-    [unlockedKeyId]
-  );
+  const destroy = useCallback(async (id: string) => {
+    await getKm().destroy(id);
+    if (unlockedIdStore === id) setUnlockedStore(null);
+    await refreshKeys();
+  }, [refreshKeys]);
 
   return {
     keys,
@@ -403,76 +485,10 @@ export function useKeyManager() {
     lockAll,
     signTransaction,
     signMessage,
+    signTypedData,
     getAddress,
     destroy,
+    refreshKeys,
     isUnlocked: (id: string) => unlockedKeyId === id,
-  };
-}
-
-// ============================================================================
-// Signing Flow Hook (prepare → simulate → sign → broadcast → verify)
-// Uses external signer (MetaMask/Rabby) via window.ethereum
-// ============================================================================
-
-export function useSignAndBroadcast(networkKey: NetworkKey) {
-  const signer = useExternalSigner();
-  const simulateMutation = useSimulateTransaction(networkKey);
-
-  const signAndBroadcast = useCallback(
-    async ({
-      prepared,
-      onSuccess,
-      onError,
-    }: {
-      prepared: PreparedTransaction;
-      onSuccess?: (hash: string) => void;
-      onError?: (error: Error) => void;
-    }) => {
-      try {
-        if (!signer.connected) {
-          throw new Error('Connect your browser wallet first');
-        }
-
-        // 1. Simulate
-        const simulated = await simulateMutation.mutateAsync({ prepared });
-        if (!simulated.success) {
-          throw new Error(`Simulation failed: ${parseRevertReason(simulated.revert || 'Unknown error')}`);
-        }
-
-        // 2. Switch chain if needed
-        if (signer.chainId && prepared.chainId && signer.chainId !== prepared.chainId) {
-          const w = (window as Window & { ethereum?: { request: (args: { method: string; params?: unknown[] }) => Promise<unknown> } }).ethereum;
-          if (w) {
-            try {
-              await w.request({
-                method: 'wallet_switchEthereumChain',
-                params: [{ chainId: `0x${prepared.chainId.toString(16)}` }],
-              });
-            } catch {
-              // ignore — let the user handle it
-            }
-          }
-        }
-
-        // 3. Sign + broadcast via external wallet
-        const hash = await signer.sendTransaction(prepared);
-        onSuccess?.(hash);
-        return hash;
-      } catch (err) {
-        const error = err instanceof Error ? err : new Error(String(err));
-        onError?.(error);
-        throw error;
-      }
-    },
-    [signer, simulateMutation]
-  );
-
-  return {
-    signAndBroadcast,
-    isSimulating: simulateMutation.isPending,
-    isSigning: false, // not tracked separately; signAndBroadcast is single-shot
-    isPending: simulateMutation.isPending,
-    error: simulateMutation.error,
-    signer,
   };
 }

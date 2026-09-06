@@ -37,11 +37,11 @@ export function LandingPage() {
             your vault automatically distributes to the people you trust.
           </TextLarge>
           <Row gap={3} className="mt-4">
-            <Link to="/connect">
-              <Button variant="system" size="lg">Connect wallet</Button>
-            </Link>
             <Link to="/create-wallet">
-              <Button variant="secondary" size="lg">Kinn wallet (soon)</Button>
+              <Button variant="primary" size="lg">Create Kinn wallet</Button>
+            </Link>
+            <Link to="/connect">
+              <Button variant="secondary" size="lg">Use MetaMask instead</Button>
             </Link>
           </Row>
         </Stack>

@@ -14,6 +14,7 @@ export interface ExternalSignerState {
   error: string | null;
   isConnecting: boolean;
   connect: () => Promise<void>;
+  cancelConnecting: () => void;
   disconnect: () => void;
   signMessage: (message: string) => Promise<string>;
   signTypedData: (typedData: { domain: unknown; types: unknown; primaryType: string; message: unknown }) => Promise<string>;
@@ -190,6 +191,7 @@ export function useExternalSigner(): ExternalSignerState {
     error,
     isConnecting,
     connect,
+    cancelConnecting: () => setIsConnecting(false),
     disconnect,
     signMessage,
     signTypedData,

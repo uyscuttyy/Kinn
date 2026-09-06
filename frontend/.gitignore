@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Re-include frontend sources: the repo-root `lib/` ignore (Foundry) would
+# otherwise swallow frontend/src/lib (KeyManager, contract encoding).
+!src/lib/
+!src/lib/**
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

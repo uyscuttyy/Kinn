@@ -4,6 +4,7 @@ import { createContext, useState, useEffect, useCallback, useMemo, type ReactNod
 import { QueryClient } from '@tanstack/react-query';
 import type { NetworkKey } from '@/types';
 import { createApiClient } from '@/lib/api';
+import { NETWORKS } from '@/lib/config';
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -55,7 +56,7 @@ export function AuthProvider({ children, networkKey }: AuthProviderProps) {
     try {
       const session = await api.auth.session(token);
       setWallet(session.wallet);
-      setChainId(session.chainId);
+      setChainId(NETWORKS[networkKey].chainId);
       setExpiresAt(session.expiresAt);
     } catch {
       setToken(null);
@@ -63,7 +64,7 @@ export function AuthProvider({ children, networkKey }: AuthProviderProps) {
       setChainId(null);
       setExpiresAt(null);
     }
-  }, [api, token]);
+  }, [api, token, networkKey]);
 
   const startChallenge = useCallback(
     async (walletAddress: string) => {
@@ -95,13 +96,16 @@ export function AuthProvider({ children, networkKey }: AuthProviderProps) {
       try {
         const challengeStr = sessionStorage.getItem('kinn_auth_challenge');
         if (!challengeStr) throw new Error('No challenge found');
-        const challenge = JSON.parse(challengeStr);
-        const { token: newToken, expiresAt: newExpiresAt } = await api.auth.verify(challenge, signature);
+        const challenge = JSON.parse(challengeStr) as { message?: { wallet?: string; nonce?: string } };
+        const nonce = challenge.message?.nonce;
+        if (!nonce) throw new Error('Challenge has no nonce');
+        const { token: newToken, expiresAt: newExpiresAt } = await api.auth.verify(nonce, signature);
         setToken(newToken);
         setExpiresAt(newExpiresAt);
         // The wallet address comes from the challenge message (it binds the wallet)
-        const walletFromChallenge = (challenge.message as { wallet?: string })?.wallet;
+        const walletFromChallenge = challenge.message?.wallet;
         if (walletFromChallenge) setWallet(walletFromChallenge);
+        setChainId(NETWORKS[networkKey].chainId);
         sessionStorage.removeItem('kinn_auth_challenge');
         await checkSession();
       } catch (err) {
@@ -111,7 +115,7 @@ export function AuthProvider({ children, networkKey }: AuthProviderProps) {
         setIsLoading(false);
       }
     },
-    [api, checkSession]
+    [api, checkSession, networkKey]
   );
 
   const logout = useCallback(async () => {

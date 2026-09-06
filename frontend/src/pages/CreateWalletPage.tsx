@@ -8,12 +8,19 @@ import { Display, TextLarge, Text, TextSmall, Mono } from '@/components/Typograp
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { Input } from '@/components/Input';
-import { useKeyManager } from '@/hooks/useApi';
+import { useKeyManager, useAuth } from '@/hooks/useApi';
 import { showToast } from '@/components/Modal';
+import type { NetworkKey } from '@/types';
 
-export function CreateWalletPage() {
+interface CreateWalletPageProps {
+  networkKey: NetworkKey;
+}
+
+export function CreateWalletPage({ networkKey: _networkKey }: CreateWalletPageProps) {
+  void _networkKey;
   const navigate = useNavigate();
-  const { generate, isLoading, error } = useKeyManager();
+  const { generate, signTypedData, isLoading, error } = useKeyManager();
+  const { startChallenge, completeChallenge } = useAuth();
   const [passphrase, setPassphrase] = useState('');
   const [confirmPassphrase, setConfirmPassphrase] = useState('');
   const [label, setLabel] = useState('');
@@ -30,10 +37,20 @@ export function CreateWalletPage() {
     }
     try {
       const result = await generate(passphrase, label || undefined);
+      // generate() unlocks for this session: sign in immediately.
+      const typed = await startChallenge(result.address);
+      const sig = await signTypedData(
+        result.id,
+        typed.domain as never,
+        typed.types as never,
+        typed.primaryType,
+        typed.message as Record<string, unknown>
+      );
+      await completeChallenge(sig);
       setGeneratedAddress(result.address);
-      showToast('Wallet created successfully', 'success');
+      showToast('Wallet created and signed in', 'success');
     } catch (err) {
-      // error handled by hook
+      showToast(err instanceof Error ? err.message : 'Failed to create wallet', 'error');
     }
   };
 

@@ -1,6 +1,6 @@
-/** Unlock — passphrase unlock existing wallet */
+/** Unlock — passphrase unlock existing Kinn wallet, then EIP-712 sign-in */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Unlock, Key } from 'lucide-react';
 import { Container, Stack, Row } from '@/components/Layout';
@@ -8,23 +8,48 @@ import { Display, TextLarge, Text, TextSmall } from '@/components/Typography';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { Input } from '@/components/Input';
-import { useKeyManager } from '@/hooks/useApi';
+import { showToast } from '@/components/Modal';
+import { useKeyManager, useAuth } from '@/hooks/useApi';
+import type { NetworkKey } from '@/types';
 
-export function UnlockPage() {
+interface UnlockPageProps {
+  networkKey: NetworkKey;
+}
+
+export function UnlockPage({ networkKey: _networkKey }: UnlockPageProps) {
+  void _networkKey;
   const navigate = useNavigate();
-  const { keys, unlock, isLoading, error } = useKeyManager();
-  const [selectedId, setSelectedId] = useState<string>(keys[0]?.id ?? '');
+  const { keys, unlock, signTypedData, getAddress, isLoading, error } = useKeyManager();
+  const { startChallenge, completeChallenge } = useAuth();
+  const [selectedId, setSelectedId] = useState<string>('');
   const [passphrase, setPassphrase] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!selectedId && keys.length > 0) setSelectedId(keys[0].id);
+  }, [keys, selectedId]);
 
   const handleUnlock = async () => {
-    if (!selectedId) {
-      return;
-    }
+    if (!selectedId) return;
+    setBusy(true);
     try {
       await unlock(selectedId, passphrase);
+      const address = await getAddress(selectedId);
+      const typed = await startChallenge(address);
+      const sig = await signTypedData(
+        selectedId,
+        typed.domain as never,
+        typed.types as never,
+        typed.primaryType,
+        typed.message as Record<string, unknown>
+      );
+      await completeChallenge(sig);
+      showToast('Signed in', 'success');
       navigate('/vault');
-    } catch {
-      // error handled by hook
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Unlock failed', 'error');
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -135,10 +160,10 @@ export function UnlockPage() {
               <Button
                 variant="system"
                 onClick={handleUnlock}
-                loading={isLoading}
+                loading={isLoading || busy}
                 disabled={!passphrase || !selectedId}
               >
-                {isLoading ? 'Unlocking…' : 'Unlock'}
+                {isLoading || busy ? 'Unlocking…' : 'Unlock'}
               </Button>
             </Row>
           </Stack>

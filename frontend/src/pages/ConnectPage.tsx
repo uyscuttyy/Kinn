@@ -130,6 +130,17 @@ export function ConnectPage({ networkKey }: ConnectPageProps) {
                   <Button variant="system" size="lg" onClick={() => signer.connect()} loading={signer.isConnecting}>
                     Connect {signer.kind === 'none' ? 'wallet' : signer.kind}
                   </Button>
+                  {signer.isConnecting && (
+                    <Stack gap={2} className="items-center text-center">
+                      <TextSmall style={{ color: '#6B7B6E', maxWidth: 400 }}>
+                        Waiting for MetaMask — click the fox icon in your toolbar and approve the
+                        connection request. The popup is often hidden behind the window.
+                      </TextSmall>
+                      <Button variant="ghost" size="sm" onClick={() => signer.cancelConnecting()}>
+                        Cancel
+                      </Button>
+                    </Stack>
+                  )}
                   {signer.error && (
                     <TextSmall style={{ color: 'var(--color-destructive)' }}>{signer.error}</TextSmall>
                   )}

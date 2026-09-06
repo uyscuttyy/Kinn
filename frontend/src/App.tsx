@@ -49,8 +49,8 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/connect" element={<ConnectPage networkKey={DEFAULT_NETWORK} />} />
-        <Route path="/create-wallet" element={<CreateWalletPage />} />
-        <Route path="/unlock" element={<UnlockPage />} />
+        <Route path="/create-wallet" element={<CreateWalletPage networkKey={DEFAULT_NETWORK} />} />
+        <Route path="/unlock" element={<UnlockPage networkKey={DEFAULT_NETWORK} />} />
 
         <Route
           path="/vault"

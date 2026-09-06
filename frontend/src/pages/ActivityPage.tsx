@@ -90,7 +90,9 @@ function ActivityRow({ event, explorerUrl, isLast }: { event: VaultActivityEvent
         <div style={{ flex: 1, minWidth: 0 }}>
           <Row gap={2} align="center" justify="between" wrap>
             <Text style={{ fontWeight: 500 }}>{label}</Text>
-            <TextSmall style={{ color: '#6B7B6E' }}>{formatTimestamp(event.timestamp)}</TextSmall>
+            <TextSmall style={{ color: '#6B7B6E' }}>
+              {event.timestamp > 0 ? formatTimestamp(event.timestamp) : `Block ${event.blockNumber}`}
+            </TextSmall>
           </Row>
           {details && (
             <TextSmall style={{ color: '#6B7B6E', marginTop: 2 }}>{details}</TextSmall>

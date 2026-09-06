@@ -86,8 +86,8 @@ export function CreateVaultPage({ networkKey }: CreateVaultPageProps) {
     }
     try {
       const result = await createVault.mutateAsync({
-        checkInInterval: intervalSec,
-        maxMissedCheckIns: maxMissed,
+        intervalSeconds: intervalSec,
+        maxMisses: maxMissed,
         beneficiaries: beneficiaries.map((b) => ({
           account: b.account,
           allocationBps: parseBps(b.allocationPct),
