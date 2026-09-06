@@ -3,9 +3,9 @@
 import { Activity, ArrowDownToLine, ArrowUpFromLine, Users, CheckCircle2, Shield } from 'lucide-react';
 import { Container, Stack, Row } from '@/components/Layout';
 import { Display, TextLarge, Text, TextSmall } from '@/components/Typography';
-import { Card, EmptyState, LoadingState } from '@/components/Card';
+import { EmptyState, LoadingState } from '@/components/Card';
 import { useAuth, useVaultActivity } from '@/hooks/useApi';
-import { formatTimestamp, formatAddress } from '@/utils/format';
+import { formatAddress } from '@/utils/format';
 import { NETWORKS } from '@/lib/config';
 import type { NetworkKey, VaultActivityEvent } from '@/types';
 
@@ -43,81 +43,82 @@ export function ActivityPage({ networkKey }: ActivityPageProps) {
             description="Once you create your vault and make your first transaction, all events will appear here."
           />
         ) : (
-          <Card padding="none">
-            <div>
-              {events.map((event, i) => (
-                <ActivityRow
-                  key={`${event.txHash}-${i}`}
-                  event={event}
-                  explorerUrl={network.explorerUrl}
-                  isLast={i === events.length - 1}
-                />
-              ))}
-            </div>
-          </Card>
+          <div className="ctable-wrap">
+            <table className="ctable">
+              <colgroup>
+                <col style={{ width: '220px' }} />
+                <col />
+                <col className="hide-mobile" style={{ width: '110px' }} />
+                <col style={{ width: '150px' }} />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Event</th>
+                  <th>Detail</th>
+                  <th className="hide-mobile num">Block</th>
+                  <th>Transaction</th>
+                </tr>
+              </thead>
+              <tbody>
+                {events.map((event, i) => (
+                  <ActivityRow
+                    key={`${event.txHash}-${i}`}
+                    event={event}
+                    explorerUrl={network.explorerUrl}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </Stack>
     </Container>
   );
 }
 
-function ActivityRow({ event, explorerUrl, isLast }: { event: VaultActivityEvent; explorerUrl: string; isLast: boolean }) {
+function ActivityRow({ event, explorerUrl }: { event: VaultActivityEvent; explorerUrl: string }) {
   const { icon, label, color, details } = getEventDisplay(event);
 
   return (
-    <div
-      style={{
-        padding: 'var(--space-4) var(--space-5)',
-        borderBottom: isLast ? 'none' : '1px solid var(--color-border)',
-      }}
-    >
-      <Row gap={4} align="start">
-        <div
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: '50%',
-            backgroundColor: `${color}20`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color,
-            flexShrink: 0,
-          }}
+    <tr>
+      <td>
+        <Row gap={2} align="center">
+          <span
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: '50%',
+              backgroundColor: `${color}20`,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color,
+              flexShrink: 0,
+            }}
+          >
+            {icon}
+          </span>
+          <Text style={{ fontWeight: 500 }}>{label}</Text>
+        </Row>
+      </td>
+      <td>
+        <TextSmall style={{ color: 'var(--color-soft)' }}>
+          {details ?? (event.timestamp > 0 ? new Date(event.timestamp * 1000).toLocaleString() : '—')}
+        </TextSmall>
+      </td>
+      <td className="hide-mobile num">{event.blockNumber}</td>
+      <td>
+        <a
+          href={`${explorerUrl}/tx/${event.txHash}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-mono"
+          style={{ color: 'var(--color-primary)', textDecoration: 'none', fontSize: '0.75rem' }}
         >
-          {icon}
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <Row gap={2} align="center" justify="between" wrap>
-            <Text style={{ fontWeight: 500 }}>{label}</Text>
-            <TextSmall style={{ color: 'var(--color-soft)' }}>
-              {event.timestamp > 0 ? formatTimestamp(event.timestamp) : `Block ${event.blockNumber}`}
-            </TextSmall>
-          </Row>
-          {details && (
-            <TextSmall style={{ color: 'var(--color-soft)', marginTop: 2 }}>{details}</TextSmall>
-          )}
-          <Row gap={2} className="mt-2" wrap>
-            <a
-              href={`${explorerUrl}/tx/${event.txHash}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-mono"
-              style={{
-                color: 'var(--color-primary)',
-                textDecoration: 'none',
-                fontSize: '0.75rem',
-              }}
-            >
-              {formatAddress(event.txHash, 6)} ↗
-            </a>
-            <TextSmall style={{ color: 'var(--color-soft)' }}>
-              Block {event.blockNumber}
-            </TextSmall>
-          </Row>
-        </div>
-      </Row>
-    </div>
+          {formatAddress(event.txHash, 6)} ↗
+        </a>
+      </td>
+    </tr>
   );
 }
 
@@ -196,7 +197,7 @@ function getEventDisplay(event: VaultActivityEvent): {
       return {
         icon: <Shield size={iconSize} />,
         label: 'Vault closed',
-        color: 'var(--color-soft)',
+        color: '#FBFBFF',
       };
     default:
       return {

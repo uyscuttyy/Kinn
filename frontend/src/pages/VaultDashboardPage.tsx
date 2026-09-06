@@ -10,7 +10,7 @@ import { VaultStateBadge } from '@/components/Badge';
 import { DeadlineIndicator } from '@/components/DeadlineIndicator';
 import { useAuth, useVaultStatus, useBeneficiaries, useInheritanceInfo, useAssets, useCheckIn } from '@/hooks/useApi';
 import { useSignTx } from '@/hooks/useSignTx';
-import { formatAddress, formatUnits, getStateDescription, isNativeEth, getAllocationWidth } from '@/utils/format';
+import { formatAddress, formatUnits, formatDeadline, getStateDescription, isNativeEth, getAllocationWidth } from '@/utils/format';
 import { NETWORKS } from '@/lib/config';
 import type { NetworkKey } from '@/types';
 import { showToast } from '@/components/Modal';
@@ -76,6 +76,25 @@ export function VaultDashboardPage({ networkKey }: VaultDashboardPageProps) {
     }
   };
 
+  const lastCheckInDate = new Date(parseInt(status.lastCheckIn) * 1000).toLocaleDateString();
+  const remaining = inheritance ? formatDeadline(inheritance.eligibilityDeadline).text : '—';
+  const deadlineLabel =
+    inheritance && inheritance.missedCheckIns > 0
+      ? `Missed ${inheritance.missedCheckIns} of ${status.maxMissedCheckIns} check-in${inheritance.missedCheckIns > 1 ? 's' : ''}`
+      : 'Time until eligibility';
+  const summaryLine =
+    state === 'Active'
+      ? `Checked in ${lastCheckInDate}. Next check-in due before eligibility — ${remaining} left on the clock.`
+      : state === 'Missed'
+        ? `You missed ${inheritance?.missedCheckIns ?? 0} of ${status.maxMissedCheckIns} check-ins. Check in now to reset the clock — nothing is lost.`
+        : state === 'Eligible'
+          ? 'Inheritance can now be triggered by anyone. Check in immediately if you do not want this.'
+          : state === 'Distributing'
+            ? 'Inheritance was triggered. Assets are paying out to your beneficiaries — nothing left for you to do.'
+            : state === 'Distributed'
+              ? 'Every asset has been distributed. This vault is finished.'
+              : 'This vault is closed. You can open a new one any time.';
+
   return (
     <Container>
       <Stack gap={8} className="py-8">
@@ -84,7 +103,7 @@ export function VaultDashboardPage({ networkKey }: VaultDashboardPageProps) {
           <Row justify="between" align="start" wrap>
             <Stack gap={2}>
               <Row gap={3} align="center">
-                <Display style={{ fontSize: '2rem' }}>Your vault</Display>
+                <Headline>Your vault</Headline>
                 <VaultStateBadge state={state} />
               </Row>
               <Text style={{ color: 'var(--color-soft)' }}>
@@ -104,44 +123,81 @@ export function VaultDashboardPage({ networkKey }: VaultDashboardPageProps) {
           </Row>
         </Stack>
 
-        {/* Deadline + Quick Actions */}
-        <Card padding="lg">
-          <Stack gap={5}>
-            <Row justify="between" align="start" wrap>
-              <Stack gap={3} style={{ minWidth: 280, flex: 1 }}>
+        {/* State summary + caps */}
+        <Stack gap={4}>
+          <div className="band" style={{ borderRadius: 'var(--radius-lg)', borderLeft: 'none', borderRight: 'none' }}>
+            <Stack gap={1} style={{ padding: 'var(--space-4) var(--space-5)' }}>
+              <TextSmall style={{ color: 'var(--color-soft)', letterSpacing: '0.1em' }}>
+                VAULT SUMMARY
+              </TextSmall>
+              <Text style={{ fontWeight: 500 }}>{summaryLine}</Text>
+            </Stack>
+          </div>
+
+          <div
+            className="grid gap-4"
+            style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}
+          >
+            <Card padding="md" className={state === 'Active' ? 'live-rail' : undefined}>
+              <Stack gap={1}>
                 <TextSmall style={{ color: 'var(--color-soft)', letterSpacing: '0.1em' }}>
-                  CHECK-IN STATUS
+                  STATUS
                 </TextSmall>
-                {inheritance && (
-                  <DeadlineIndicator
-                    deadline={inheritance.eligibilityDeadline}
-                    label={
-                      inheritance.missedCheckIns > 0
-                        ? `Missed ${inheritance.missedCheckIns} of ${status.maxMissedCheckIns} check-in${inheritance.missedCheckIns > 1 ? 's' : ''}`
-                        : 'Time until eligibility'
-                    }
-                  />
-                )}
+                <VaultStateBadge state={state} />
                 <TextSmall style={{ color: 'var(--color-soft)' }}>
-                  Last check-in:{' '}
-                  {new Date(parseInt(status.lastCheckIn) * 1000).toLocaleString()}
+                  Last check-in {new Date(parseInt(status.lastCheckIn) * 1000).toLocaleDateString()}
                 </TextSmall>
               </Stack>
+            </Card>
 
-              {canCheckIn && (
-                <Button
-                  variant="primary"
-                  size="lg"
-                  onClick={handleCheckIn}
-                  loading={checkInMutation.isPending || signTx.isPending}
-                >
-                  <CheckCircle2 size={20} />
-                  Check in now
-                </Button>
-              )}
+            <Card padding="md">
+              <Stack gap={2}>
+                <TextSmall style={{ color: 'var(--color-soft)', letterSpacing: '0.1em' }}>
+                  TIME REMAINING
+                </TextSmall>
+                {inheritance ? (
+                  <DeadlineIndicator
+                    deadline={inheritance.eligibilityDeadline}
+                    label={deadlineLabel}
+                  />
+                ) : (
+                  <LoadingState message="Loading deadline…" />
+                )}
+              </Stack>
+            </Card>
+
+            <Card padding="md">
+              <Stack gap={1}>
+                <TextSmall style={{ color: 'var(--color-soft)', letterSpacing: '0.1em' }}>
+                  BENEFICIARIES
+                </TextSmall>
+                <Text style={{ fontWeight: 600, fontSize: '1.5rem' }}>
+                  {beneficiaries ? beneficiaries.beneficiaries.length : '—'}
+                </Text>
+                <TextSmall style={{ color: 'var(--color-soft)' }}>
+                  {beneficiaries ? `${(beneficiaries.totalAllocationBps / 100).toFixed(0)}% allocated` : 'Loading…'}
+                </TextSmall>
+              </Stack>
+            </Card>
+          </div>
+
+          {canCheckIn && (
+            <Row gap={3} align="center" wrap>
+              <Button
+                variant="primary"
+                size="lg"
+                onClick={handleCheckIn}
+                loading={checkInMutation.isPending || signTx.isPending}
+              >
+                <CheckCircle2 size={20} />
+                Check in now
+              </Button>
+              <Button variant="ghost" onClick={() => navigate('/vault/check-in')}>
+                Open check-in screen
+              </Button>
             </Row>
-          </Stack>
-        </Card>
+          )}
+        </Stack>
 
         {/* Assets + Beneficiaries + Quick Actions grid */}
         <div

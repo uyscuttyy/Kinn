@@ -228,6 +228,89 @@
     background-color: var(--color-wash);
   }
 
+  /* Feature rows — hover pop on the wash band */
+  .feature-row {
+    background-color: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4) var(--space-5);
+    transition: border-color var(--transition-fast), transform var(--transition-fast);
+  }
+
+  .feature-row:hover {
+    border-color: var(--color-primary);
+    transform: translateY(-1px);
+  }
+
+  .feature-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    background-color: rgb(64 86 244 / 0.14);
+    border: 1px solid rgb(64 86 244 / 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-primary);
+    flex-shrink: 0;
+  }
+
+  /* Data tables — real <table>: fixed layout, aligned numeric columns */
+  .ctable-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-card);
+  }
+
+  table.ctable {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: var(--text-body-sm);
+  }
+
+  .ctable thead th {
+    text-align: left;
+    font-size: var(--text-label);
+    letter-spacing: var(--tracking-wide);
+    color: var(--color-soft);
+    font-weight: 500;
+    padding: var(--space-3) var(--space-4);
+    background-color: var(--color-wash);
+    border-bottom: 1px solid var(--color-border);
+    white-space: nowrap;
+  }
+
+  .ctable tbody td {
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: middle;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .ctable tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .ctable tbody tr:hover td {
+    background-color: rgb(251 251 255 / 0.02);
+  }
+
+  .ctable td.num,
+  .ctable thead th.num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-family: var(--font-mono);
+  }
+
+  @media (max-width: 640px) {
+    .ctable .hide-mobile {
+      display: none;
+    }
+  }
+
   /* Live rail — one class differentiates the active state card */
   .live-rail {
     border-left: 3px solid var(--color-primary);
