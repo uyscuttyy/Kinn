@@ -114,7 +114,7 @@ written history.
 | MetaMask repo search | PASS | Zero code hits (see §3) |
 | Dev-server freshness (`curl :5173` for edited files) | PASS | Served files contain the new code (live-rail, ctable, feature-row, Figtree) |
 | Backend live smoke ( Challenge → verify → prepare → simulate) | PASS | Ran earlier against :3001: 200s, WalletLink verify, factory prepare, simulate success |
-| Contract tests (`forge test`) | NOT RUN | Foundry is not installed in this environment |
+| Contract tests (`forge test`, Foundry v1.8.1) | PASS | 116 pass, 0 fail, 12 suites incl. invariants (32 runs, 4096 calls), ~6 s. Required `forge install foundry-rs/forge-std` first (lib/ submodule was not checked out) |
 | Visual browser QA | NOT RUN | No working browser automation here; responsive behavior verified by code (breakpoints, drawer, table scroll, wrap rows) |
 
 No result above is fabricated; NOT RUN items are stated as such.
@@ -177,6 +177,6 @@ every page reachable, destructive actions confirmed, transaction feedback at
 every step, focus states and aria labels present. MetaMask removal: complete
 in code and frontend deps, verified by search; frozen backend signing flow
 preserved with generic wording. Tests: frontend tsc/build/lint pass, backend
-tsc + 98/98 tests pass, both dependency audits clean; forge and visual QA
-honestly not run. Audit: findings fixed and re-verified; nothing blocking
-left for testnet demo.
+tsc + 98/98 tests pass, forge 116/116 pass, both dependency audits clean;
+visual QA honestly not run. Audit: findings fixed and re-verified; nothing
+blocking left for testnet demo.
