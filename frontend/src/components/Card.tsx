@@ -75,7 +75,7 @@ export function LoadingState({ variant = 'inline', message }: LoadingStateProps)
         style={{ minHeight: '60vh', gap: 'var(--space-3)' }}
       >
         <div className="skeleton" style={{ width: 32, height: 32, borderRadius: '50%' }} />
-        {message && <span className="text-body-sm" style={{ color: '#6B7B6E' }}>{message}</span>}
+        {message && <span className="text-body-sm" style={{ color: 'var(--color-soft)' }}>{message}</span>}
       </div>
     );
   }
@@ -92,7 +92,7 @@ export function LoadingState({ variant = 'inline', message }: LoadingStateProps)
   return (
     <div className="flex items-center" style={{ gap: 'var(--space-2)' }}>
       <div className="skeleton" style={{ width: 16, height: 16, borderRadius: '50%' }} />
-      {message && <span className="text-body-sm" style={{ color: '#6B7B6E' }}>{message}</span>}
+      {message && <span className="text-body-sm" style={{ color: 'var(--color-soft)' }}>{message}</span>}
     </div>
   );
 }

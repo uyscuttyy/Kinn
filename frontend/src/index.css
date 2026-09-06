@@ -1,35 +1,39 @@
 @import "tailwindcss";
 
 @theme {
-  /* Kinn Design System — Five Colors */
-  --color-brand: #7392B7;      /* Primary — trust, stability, financial credibility */
-  --color-surface: #FBFBFF;    /* Surface/Text — clarity, readability, warmth */
-  --color-deep: #0D160B;       /* Deep Background — foundation, gravity, premium */
-  --color-alert: #9D5C63;      /* Accent/Alert — urgency, inheritance-critical */
-  --color-action: #4056F4;     /* Action/System — signing, blockchain interactions */
+  /* Kinn Design System — locked four-color palette. Tints below are derived
+     steps of these hues only; no unrelated colors. */
+  --color-deep: #0D160B;       /* Page background — gravity, premium calm */
+  --color-surface: #FBFBFF;    /* Primary text + light surfaces */
+  --color-alert: #9D5C63;      /* Urgency, destructive, inheritance-critical */
+  --color-action: #4056F4;     /* The single interactive accent (buttons, links, focus) */
 
-  /* Semantic mappings */
-  --color-primary: var(--color-brand);
+  /* Derived steps of the palette */
+  --color-primary: var(--color-action);
   --color-background: var(--color-deep);
   --color-foreground: var(--color-surface);
   --color-destructive: var(--color-alert);
   --color-system: var(--color-action);
+  --color-soft: rgb(251 251 255 / 0.62);  /* secondary text: surface at 62% */
+  --color-faint: rgb(251 251 255 / 0.38); /* tertiary text: surface at 38% */
+  --color-wash: #111C10;      /* section band: one step lighter than deep */
+  --color-card: #16211A;       /* card surface: deep + surface 4% */
   --color-muted: #1A2A1F;      /* Subtle elevation on deep */
-  --color-border: #2D3D30;     /* Subtle borders on deep */
-  --color-card: #142017;       /* Card surface */
+  --color-border: rgb(251 251 255 / 0.09); /* hairlines: surface at 9% */
 
-  /* Typography — Söhne/Neue Haas/Inter fallback */
-  --font-sans: "Inter", "Söhne", "Neue Haas Grotesk", system-ui, -apple-system, sans-serif;
+  /* Typography — Figtree (loaded in index.html), humanist single family */
+  --font-sans: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
 
-  /* Modular scale (1.25 ratio) */
-  --text-display: 3rem;        /* 48px / 56 */
-  --text-headline: 2rem;       /* 32px / 40 */
-  --text-body-lg: 1.125rem;    /* 18px / 28 */
-  --text-body: 1rem;           /* 16px / 24 */
-  --text-body-sm: 0.875rem;    /* 14px / 20 */
-  --text-label: 0.75rem;       /* 12px / 16 */
-  --text-mono: 0.875rem;       /* 14px / 20 */
+  /* Type scale — display 600/40, subhead step at 21px */
+  --text-display: 2.5rem;        /* 40px / 48 */
+  --text-headline: 1.75rem;      /* 28px / 36 */
+  --text-subhead: 1.3125rem;     /* 21px / 28 */
+  --text-body-lg: 1.125rem;      /* 18px / 28 */
+  --text-body: 1rem;             /* 16px / 24 */
+  --text-body-sm: 0.875rem;      /* 14px / 20 */
+  --text-label: 0.75rem;         /* 12px / 16 */
+  --text-mono: 0.875rem;         /* 14px / 20 */
 
   /* Leading */
   --leading-tight: 1.167;
@@ -111,12 +115,19 @@
     font-size: var(--text-display);
     line-height: var(--leading-tight);
     letter-spacing: var(--tracking-tight);
-    font-weight: 700;
+    font-weight: 600;
   }
 
   .text-headline {
     font-size: var(--text-headline);
     line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tight);
+    font-weight: 600;
+  }
+
+  .text-subhead {
+    font-size: var(--text-subhead);
+    line-height: 1.33;
     letter-spacing: var(--tracking-tight);
     font-weight: 600;
   }
@@ -155,14 +166,14 @@
 
   /* Focus visible — accessible, on-brand */
   *:focus-visible {
-    outline: 2px solid var(--color-brand);
+    outline: 2px solid var(--color-primary);
     outline-offset: 2px;
   }
 
   /* Selection */
   ::selection {
-    background-color: var(--color-brand);
-    color: var(--color-deep);
+    background-color: var(--color-primary);
+    color: var(--color-surface);
   }
 
   /* Scrollbar — subtle */
@@ -203,6 +214,23 @@
     .container {
       padding: 0 var(--space-6);
     }
+  }
+
+  /* Section bands — tint whole sections, never lines. Alternate bands on
+     multi-section pages; inner pages sit on .page wash with cards on top. */
+  .band {
+    background-color: var(--color-wash);
+    border-top: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .page-wash {
+    background-color: var(--color-wash);
+  }
+
+  /* Live rail — one class differentiates the active state card */
+  .live-rail {
+    border-left: 3px solid var(--color-primary);
   }
 
   /* Card */
@@ -265,12 +293,13 @@
     text-decoration: none;
     white-space: nowrap;
     background-color: var(--color-primary);
-    color: var(--color-deep);
+    color: var(--color-surface);
     border-color: var(--color-primary);
+    font-weight: 600;
   }
 
   .btn-primary:hover:not(:disabled) {
-    filter: brightness(1.1);
+    filter: brightness(1.12);
   }
 
   .btn-primary:active:not(:disabled) {
@@ -402,13 +431,13 @@
   }
 
   .input::placeholder {
-    color: #6B7B6E;
+    color: var(--color-soft);
   }
 
   .input:focus {
     outline: none;
-    border-color: var(--color-brand);
-    box-shadow: 0 0 0 3px rgb(115 146 183 / 0.2);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgb(64 86 244 / 0.2);
   }
 
   .input:disabled {
@@ -434,7 +463,7 @@
 
   .helper-text {
     font-size: var(--text-body-sm);
-    color: #6B7B6E;
+    color: var(--color-soft);
     margin-top: var(--space-1);
   }
 
@@ -467,9 +496,9 @@
     line-height: 1;
     border-radius: var(--radius-xl);
     white-space: nowrap;
-    background-color: rgb(115 146 183 / 0.15);
-    color: var(--color-brand);
-    border: 1px solid rgb(115 146 183 / 0.3);
+    background-color: rgb(64 86 244 / 0.15);
+    color: var(--color-primary);
+    border: 1px solid rgb(64 86 244 / 0.3);
   }
 
   .badge-missed {
@@ -528,9 +557,9 @@
     line-height: 1;
     border-radius: var(--radius-xl);
     white-space: nowrap;
-    background-color: rgb(115 146 183 / 0.15);
-    color: var(--color-brand);
-    border: 1px solid rgb(115 146 183 / 0.3);
+    background-color: rgb(64 86 244 / 0.15);
+    color: var(--color-primary);
+    border: 1px solid rgb(64 86 244 / 0.3);
   }
 
   .badge-closed {
@@ -544,7 +573,7 @@
     border-radius: var(--radius-xl);
     white-space: nowrap;
     background-color: var(--color-muted);
-    color: #6B7B6E;
+    color: var(--color-soft);
     border: 1px solid var(--color-border);
   }
 
@@ -588,9 +617,9 @@
     line-height: 1;
     border-radius: var(--radius-xl);
     white-space: nowrap;
-    background-color: rgb(115 146 183 / 0.15);
-    color: var(--color-brand);
-    border: 1px solid rgb(115 146 183 / 0.3);
+    background-color: rgb(64 86 244 / 0.15);
+    color: var(--color-primary);
+    border: 1px solid rgb(64 86 244 / 0.3);
   }
 
   @keyframes pulse {
@@ -614,7 +643,7 @@
   }
 
   .deadline-bar-fill.normal {
-    background-color: var(--color-brand);
+    background-color: var(--color-primary);
   }
 
   .deadline-bar-fill.warning {
@@ -648,8 +677,8 @@
   }
 
   .asset-icon-eth {
-    background-color: rgb(115 146 183 / 0.15);
-    color: var(--color-brand);
+    background-color: rgb(251 251 255 / 0.08);
+    color: var(--color-surface);
   }
 
   .asset-icon-usdc {
@@ -677,7 +706,7 @@
 
   .asset-balance-sm {
     font-size: var(--text-body-sm);
-    color: #6B7B6E;
+    color: var(--color-soft);
   }
 
   /* Beneficiary row */
@@ -699,7 +728,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--color-brand);
+    color: var(--color-primary);
     font-weight: 600;
     font-size: var(--text-body);
     flex-shrink: 0;
@@ -722,7 +751,7 @@
     gap: var(--space-2);
     font-size: var(--text-body-sm);
     font-weight: 500;
-    color: var(--color-brand);
+    color: var(--color-primary);
   }
 
   .allocation-bar {
@@ -736,7 +765,7 @@
 
   .allocation-bar-fill {
     height: 100%;
-    background-color: var(--color-brand);
+    background-color: var(--color-primary);
     border-radius: var(--radius-xl);
     transition: width var(--transition-normal);
   }
@@ -773,9 +802,9 @@
     font-size: var(--text-body-sm);
     font-weight: 500;
     border-radius: var(--radius-md);
-    background-color: rgb(115 146 183 / 0.15);
-    color: var(--color-brand);
-    border: 1px solid rgb(115 146 183 / 0.3);
+    background-color: rgb(64 86 244 / 0.15);
+    color: var(--color-primary);
+    border: 1px solid rgb(64 86 244 / 0.3);
   }
 
   .tx-status-confirmed {
@@ -786,9 +815,9 @@
     font-size: var(--text-body-sm);
     font-weight: 500;
     border-radius: var(--radius-md);
-    background-color: rgb(115 146 183 / 0.15);
-    color: var(--color-brand);
-    border: 1px solid rgb(115 146 183 / 0.3);
+    background-color: rgb(64 86 244 / 0.15);
+    color: var(--color-primary);
+    border: 1px solid rgb(64 86 244 / 0.3);
   }
 
   .tx-status-failed {
@@ -830,7 +859,7 @@
     justify-content: center;
     padding: var(--space-12) var(--space-6);
     text-align: center;
-    color: #6B7B6E;
+    color: var(--color-soft);
   }
 
   .empty-state-icon {
@@ -919,8 +948,8 @@
     animation: slide-in var(--transition-normal);
     max-width: 400px;
     background-color: var(--color-card);
-    border: 1px solid var(--color-brand);
-    color: var(--color-brand);
+    border: 1px solid var(--color-primary);
+    color: var(--color-primary);
   }
 
   .toast-error {
@@ -994,7 +1023,7 @@
   .nav-brand-icon {
     width: 32px;
     height: 32px;
-    color: var(--color-brand);
+    color: var(--color-primary);
   }
 
   /* Wallet account display */
@@ -1018,7 +1047,7 @@
     font-family: var(--font-mono);
     font-size: var(--text-body-sm);
     font-weight: 500;
-    color: var(--color-brand);
+    color: var(--color-primary);
   }
 
   /* Utility */

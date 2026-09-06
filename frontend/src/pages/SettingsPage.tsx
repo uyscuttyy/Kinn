@@ -127,10 +127,10 @@ export function SettingsPage({ networkKey }: SettingsPageProps) {
       <Stack gap={6} className="py-8">
         <Stack gap={2}>
           <Row gap={2} align="center">
-            <SettingsIcon size={28} color="var(--color-brand)" />
+            <SettingsIcon size={28} color="var(--color-primary)" />
             <Display>Settings</Display>
           </Row>
-          <TextLarge style={{ color: '#6B7B6E' }}>
+          <TextLarge style={{ color: 'var(--color-soft)' }}>
             Adjust your vault's check-in schedule, automation reserve, and
             danger-zone actions.
           </TextLarge>
@@ -139,7 +139,7 @@ export function SettingsPage({ networkKey }: SettingsPageProps) {
         {/* Schedule */}
         <Card padding="lg">
           <Stack gap={4}>
-            <TextSmall style={{ color: '#6B7B6E', letterSpacing: '0.1em' }}>
+            <TextSmall style={{ color: 'var(--color-soft)', letterSpacing: '0.1em' }}>
               CHECK-IN SCHEDULE
             </TextSmall>
 
@@ -187,13 +187,13 @@ export function SettingsPage({ networkKey }: SettingsPageProps) {
         {/* Automation reserve */}
         <Card padding="lg">
           <Stack gap={4}>
-            <TextSmall style={{ color: '#6B7B6E', letterSpacing: '0.1em' }}>
+            <TextSmall style={{ color: 'var(--color-soft)', letterSpacing: '0.1em' }}>
               AUTOMATION RESERVE
             </TextSmall>
 
             <Row gap={3} align="baseline">
               <Mono style={{ fontSize: '1.5rem' }}>{formatUnits(status.reserve, 18)} ETH</Mono>
-              <TextSmall style={{ color: '#6B7B6E' }}>
+              <TextSmall style={{ color: 'var(--color-soft)' }}>
                 Funds keeper gas for inheritance execution and retries.
               </TextSmall>
             </Row>
@@ -245,7 +245,7 @@ export function SettingsPage({ networkKey }: SettingsPageProps) {
 
             <Stack gap={2}>
               <Text>Close this vault</Text>
-              <TextSmall style={{ color: '#6B7B6E' }}>
+              <TextSmall style={{ color: 'var(--color-soft)' }}>
                 Only possible when the vault is empty (no protected assets) and
                 inheritance has not been triggered. The vault is permanently
                 closed; you may create a new one.

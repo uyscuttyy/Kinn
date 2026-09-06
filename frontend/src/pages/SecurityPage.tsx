@@ -53,10 +53,10 @@ export function SecurityPage({ networkKey }: SecurityPageProps) {
       <Stack gap={6} className="py-8">
         <Stack gap={2}>
           <Row gap={2} align="center">
-            <Shield size={28} color="var(--color-brand)" />
+            <Shield size={28} color="var(--color-primary)" />
             <Display>Security</Display>
           </Row>
-          <TextLarge style={{ color: '#6B7B6E' }}>
+          <TextLarge style={{ color: 'var(--color-soft)' }}>
             Manage your KeyManager wallets, session locks, and connection settings.
           </TextLarge>
         </Stack>
@@ -65,7 +65,7 @@ export function SecurityPage({ networkKey }: SecurityPageProps) {
         {wallet && (
           <Card padding="lg">
             <Stack gap={4}>
-              <TextSmall style={{ color: '#6B7B6E', letterSpacing: '0.1em' }}>
+              <TextSmall style={{ color: 'var(--color-soft)', letterSpacing: '0.1em' }}>
                 CURRENT SESSION
               </TextSmall>
               <Row justify="between" align="center" wrap>
@@ -85,7 +85,7 @@ export function SecurityPage({ networkKey }: SecurityPageProps) {
         <Card padding="lg">
           <Stack gap={4}>
             <Row justify="between" align="center">
-              <TextSmall style={{ color: '#6B7B6E', letterSpacing: '0.1em' }}>
+              <TextSmall style={{ color: 'var(--color-soft)', letterSpacing: '0.1em' }}>
                 KEYMANAGER WALLETS
               </TextSmall>
               <Button variant="secondary" size="sm" onClick={() => navigate('/create-wallet')}>
@@ -125,7 +125,7 @@ export function SecurityPage({ networkKey }: SecurityPageProps) {
                               </span>
                             )}
                           </Row>
-                          <TextSmall style={{ color: '#6B7B6E' }}>
+                          <TextSmall style={{ color: 'var(--color-soft)' }}>
                             Created {new Date(k.createdAt * 1000).toLocaleDateString()}
                           </TextSmall>
                         </Stack>
@@ -180,13 +180,13 @@ export function SecurityPage({ networkKey }: SecurityPageProps) {
         {/* Vault contract info */}
         <Card padding="lg">
           <Stack gap={3}>
-            <TextSmall style={{ color: '#6B7B6E', letterSpacing: '0.1em' }}>
+            <TextSmall style={{ color: 'var(--color-soft)', letterSpacing: '0.1em' }}>
               VAULT FACTORY
             </TextSmall>
             <Row justify="between" align="center" wrap>
               <Stack gap={1}>
                 <Mono>{network.factoryAddress}</Mono>
-                <TextSmall style={{ color: '#6B7B6E' }}>{network.name}</TextSmall>
+                <TextSmall style={{ color: 'var(--color-soft)' }}>{network.name}</TextSmall>
               </Stack>
               <Row gap={2}>
                 <Button

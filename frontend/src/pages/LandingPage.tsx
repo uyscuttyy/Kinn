@@ -17,11 +17,11 @@ export function LandingPage() {
               width: 64,
               height: 64,
               borderRadius: '50%',
-              backgroundColor: 'rgb(115 146 183 / 0.15)',
+              backgroundColor: 'rgb(64 86 244 / 0.15)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: 'var(--color-brand)',
+              color: 'var(--color-primary)',
             }}
           >
             <Shield size={32} strokeWidth={1.5} />
@@ -30,7 +30,7 @@ export function LandingPage() {
             A vault for what you protect.
           </Display>
           <TextLarge
-            style={{ maxWidth: '560px', color: '#6B7B6E' }}
+            style={{ maxWidth: '560px', color: 'var(--color-soft)' }}
           >
             Kinn is a non-custodial inheritance vault. Set check-in intervals,
             name your beneficiaries, and deposit assets. If you stop checking in,
@@ -48,7 +48,7 @@ export function LandingPage() {
 
         <Stack gap={5}>
           <TextSmall
-            style={{ color: '#6B7B6E', textAlign: 'center', letterSpacing: '0.1em' }}
+            style={{ color: 'var(--color-soft)', textAlign: 'center', letterSpacing: '0.1em' }}
           >
             HOW IT WORKS
           </TextSmall>
@@ -78,7 +78,7 @@ export function LandingPage() {
 
         <Card padding="md">
           <Stack gap={3}>
-            <TextSmall style={{ color: '#6B7B6E', letterSpacing: '0.1em' }}>
+            <TextSmall style={{ color: 'var(--color-soft)', letterSpacing: '0.1em' }}>
               TECHNICAL DETAILS
             </TextSmall>
             <Text>
@@ -88,9 +88,9 @@ export function LandingPage() {
               encryption at rest.
             </Text>
             <Row gap={2} wrap>
-              <Mono style={{ color: '#6B7B6E' }}>Chain:</Mono>
+              <Mono style={{ color: 'var(--color-soft)' }}>Chain:</Mono>
               <Mono>Base Sepolia (84532)</Mono>
-              <Mono style={{ color: '#6B7B6E', marginLeft: 8 }}>Factory:</Mono>
+              <Mono style={{ color: 'var(--color-soft)', marginLeft: 8 }}>Factory:</Mono>
               <Mono>0x6727…2933</Mono>
             </Row>
           </Stack>
@@ -113,7 +113,7 @@ function FeatureRow({ icon, title, description }: { icon: React.ReactNode; title
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: 'var(--color-brand)',
+          color: 'var(--color-primary)',
           flexShrink: 0,
         }}
       >
@@ -121,7 +121,7 @@ function FeatureRow({ icon, title, description }: { icon: React.ReactNode; title
       </div>
       <Stack gap={1}>
         <Text style={{ fontWeight: 600 }}>{title}</Text>
-        <TextSmall style={{ color: '#6B7B6E' }}>{description}</TextSmall>
+        <TextSmall style={{ color: 'var(--color-soft)' }}>{description}</TextSmall>
       </Stack>
     </Row>
   );

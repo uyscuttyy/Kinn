@@ -18,6 +18,10 @@ export function Headline({ children, className, as: Tag = 'h2', style }: TextPro
   return <Tag className={cn('text-headline', className)} style={style}>{children}</Tag>;
 }
 
+export function Subhead({ children, className, as: Tag = 'h3', style }: TextProps) {
+  return <Tag className={cn('text-subhead', className)} style={style}>{children}</Tag>;
+}
+
 export function Text({ children, className, as: Tag = 'p', style }: TextProps) {
   return <Tag className={cn('text-body', className)} style={style}>{children}</Tag>;
 }
@@ -45,7 +49,7 @@ interface MetadataProps {
   style?: CSSProperties;
 }
 
-export function Metadata({ children, className, color = '#6B7B6E', style }: MetadataProps) {
+export function Metadata({ children, className, color = 'var(--color-soft)', style }: MetadataProps) {
   return (
     <span
       className={cn('text-body-sm', className)}

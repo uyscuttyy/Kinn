@@ -39,7 +39,7 @@ export function VaultDashboardPage({ networkKey }: VaultDashboardPageProps) {
         <Stack gap={8} className="py-12">
           <Stack gap={4}>
             <Display>Welcome to Kinn.</Display>
-            <TextLarge style={{ color: '#6B7B6E', maxWidth: '600px' }}>
+            <TextLarge style={{ color: 'var(--color-soft)', maxWidth: '600px' }}>
               You don't have a vault yet on {network.name}. Create one to start
               protecting your assets for inheritance.
             </TextLarge>
@@ -87,7 +87,7 @@ export function VaultDashboardPage({ networkKey }: VaultDashboardPageProps) {
                 <Display style={{ fontSize: '2rem' }}>Your vault</Display>
                 <VaultStateBadge state={state} />
               </Row>
-              <Text style={{ color: '#6B7B6E' }}>
+              <Text style={{ color: 'var(--color-soft)' }}>
                 {getStateDescription(state)}
               </Text>
             </Stack>
@@ -109,7 +109,7 @@ export function VaultDashboardPage({ networkKey }: VaultDashboardPageProps) {
           <Stack gap={5}>
             <Row justify="between" align="start" wrap>
               <Stack gap={3} style={{ minWidth: 280, flex: 1 }}>
-                <TextSmall style={{ color: '#6B7B6E', letterSpacing: '0.1em' }}>
+                <TextSmall style={{ color: 'var(--color-soft)', letterSpacing: '0.1em' }}>
                   CHECK-IN STATUS
                 </TextSmall>
                 {inheritance && (
@@ -122,7 +122,7 @@ export function VaultDashboardPage({ networkKey }: VaultDashboardPageProps) {
                     }
                   />
                 )}
-                <TextSmall style={{ color: '#6B7B6E' }}>
+                <TextSmall style={{ color: 'var(--color-soft)' }}>
                   Last check-in:{' '}
                   {new Date(parseInt(status.lastCheckIn) * 1000).toLocaleString()}
                 </TextSmall>
@@ -192,7 +192,7 @@ export function VaultDashboardPage({ networkKey }: VaultDashboardPageProps) {
                               style={{
                                 background: 'none',
                                 border: 'none',
-                                color: 'var(--color-brand)',
+                                color: 'var(--color-primary)',
                                 fontSize: '0.75rem',
                                 cursor: 'pointer',
                                 padding: 0,
@@ -240,7 +240,7 @@ export function VaultDashboardPage({ networkKey }: VaultDashboardPageProps) {
                           {b.label ?? formatAddress(b.account, 4)}
                         </Text>
                         {b.label && (
-                          <TextSmall style={{ color: '#6B7B6E' }} className="text-mono">
+                          <TextSmall style={{ color: 'var(--color-soft)' }} className="text-mono">
                             {formatAddress(b.account, 4)}
                           </TextSmall>
                         )}
@@ -257,7 +257,7 @@ export function VaultDashboardPage({ networkKey }: VaultDashboardPageProps) {
                     </div>
                   ))}
                   {beneficiaries.beneficiaries.length > 3 && (
-                    <TextSmall style={{ color: '#6B7B6E', textAlign: 'center' }}>
+                    <TextSmall style={{ color: 'var(--color-soft)', textAlign: 'center' }}>
                       +{beneficiaries.beneficiaries.length - 3} more
                     </TextSmall>
                   )}

@@ -49,7 +49,7 @@ export function Navigation({ networkKey }: NavigationProps) {
                       a ? 'text-body-sm' : 'text-body-sm'
                     }
                     style={{
-                      color: isActive(link.to) ? 'var(--color-brand)' : 'var(--color-foreground)',
+                      color: isActive(link.to) ? 'var(--color-primary)' : 'var(--color-foreground)',
                       textDecoration: 'none',
                       fontWeight: isActive(link.to) ? 600 : 500,
                     }}
@@ -87,7 +87,7 @@ export function Navigation({ networkKey }: NavigationProps) {
                   Unlocked
                 </span>
               )}
-              <span className="text-body-sm" style={{ color: '#6B7B6E' }}>
+              <span className="text-body-sm" style={{ color: 'var(--color-soft)' }}>
                 {network.name}
               </span>
               <div className="wallet-account">
@@ -125,7 +125,7 @@ export function Navigation({ networkKey }: NavigationProps) {
                 to={link.to}
                 onClick={() => setMobileOpen(false)}
                 style={{
-                  color: isActive(link.to) ? 'var(--color-brand)' : 'var(--color-foreground)',
+                  color: isActive(link.to) ? 'var(--color-primary)' : 'var(--color-foreground)',
                   textDecoration: 'none',
                   fontWeight: isActive(link.to) ? 600 : 500,
                   padding: 'var(--space-3) 0',

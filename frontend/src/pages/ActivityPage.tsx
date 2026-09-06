@@ -29,10 +29,10 @@ export function ActivityPage({ networkKey }: ActivityPageProps) {
       <Stack gap={6} className="py-8">
         <Stack gap={2}>
           <Row gap={2} align="center">
-            <Activity size={28} color="var(--color-brand)" />
+            <Activity size={28} color="var(--color-primary)" />
             <Display>Activity</Display>
           </Row>
-          <TextLarge style={{ color: '#6B7B6E' }}>
+          <TextLarge style={{ color: 'var(--color-soft)' }}>
             Every state change for your vault, indexed from chain events.
           </TextLarge>
         </Stack>
@@ -90,12 +90,12 @@ function ActivityRow({ event, explorerUrl, isLast }: { event: VaultActivityEvent
         <div style={{ flex: 1, minWidth: 0 }}>
           <Row gap={2} align="center" justify="between" wrap>
             <Text style={{ fontWeight: 500 }}>{label}</Text>
-            <TextSmall style={{ color: '#6B7B6E' }}>
+            <TextSmall style={{ color: 'var(--color-soft)' }}>
               {event.timestamp > 0 ? formatTimestamp(event.timestamp) : `Block ${event.blockNumber}`}
             </TextSmall>
           </Row>
           {details && (
-            <TextSmall style={{ color: '#6B7B6E', marginTop: 2 }}>{details}</TextSmall>
+            <TextSmall style={{ color: 'var(--color-soft)', marginTop: 2 }}>{details}</TextSmall>
           )}
           <Row gap={2} className="mt-2" wrap>
             <a
@@ -104,14 +104,14 @@ function ActivityRow({ event, explorerUrl, isLast }: { event: VaultActivityEvent
               rel="noopener noreferrer"
               className="text-mono"
               style={{
-                color: 'var(--color-brand)',
+                color: 'var(--color-primary)',
                 textDecoration: 'none',
                 fontSize: '0.75rem',
               }}
             >
               {formatAddress(event.txHash, 6)} ↗
             </a>
-            <TextSmall style={{ color: '#6B7B6E' }}>
+            <TextSmall style={{ color: 'var(--color-soft)' }}>
               Block {event.blockNumber}
             </TextSmall>
           </Row>
@@ -133,14 +133,14 @@ function getEventDisplay(event: VaultActivityEvent): {
       return {
         icon: <Shield size={iconSize} />,
         label: 'Vault created',
-        color: 'var(--color-brand)',
+        color: 'var(--color-primary)',
         details: event.data?.vaultAddress ? `Address: ${formatAddress(event.data.vaultAddress as string, 4)}` : undefined,
       };
     case 'AssetDeposited':
       return {
         icon: <ArrowDownToLine size={iconSize} />,
         label: 'Deposit',
-        color: 'var(--color-brand)',
+        color: 'var(--color-primary)',
         details: event.data?.amount ? `${event.data.amount} ${event.data.token ?? ''}` : undefined,
       };
     case 'AssetWithdrawn':
@@ -161,7 +161,7 @@ function getEventDisplay(event: VaultActivityEvent): {
       return {
         icon: <CheckCircle2 size={iconSize} />,
         label: 'Check-in',
-        color: 'var(--color-brand)',
+        color: 'var(--color-primary)',
       };
     case 'InheritanceTriggered':
       return {
@@ -183,7 +183,7 @@ function getEventDisplay(event: VaultActivityEvent): {
       return {
         icon: <CheckCircle2 size={iconSize} />,
         label: 'Asset processed',
-        color: 'var(--color-brand)',
+        color: 'var(--color-primary)',
         details: event.data?.token as string | undefined,
       };
     case 'InheritanceDistributionFailed':
@@ -196,7 +196,7 @@ function getEventDisplay(event: VaultActivityEvent): {
       return {
         icon: <Shield size={iconSize} />,
         label: 'Vault closed',
-        color: '#6B7B6E',
+        color: 'var(--color-soft)',
       };
     default:
       return {

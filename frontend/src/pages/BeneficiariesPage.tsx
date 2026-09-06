@@ -96,10 +96,10 @@ export function BeneficiariesPage({ networkKey }: BeneficiariesPageProps) {
         <Row gap={2} align="center" justify="between" wrap>
           <Stack gap={2}>
             <Row gap={2} align="center">
-              <Users size={28} color="var(--color-brand)" />
+              <Users size={28} color="var(--color-primary)" />
               <Display>Beneficiaries</Display>
             </Row>
-            <TextLarge style={{ color: '#6B7B6E' }}>
+            <TextLarge style={{ color: 'var(--color-soft)' }}>
               The contract enforces that all allocations sum to exactly 100%.
             </TextLarge>
           </Stack>
@@ -113,7 +113,7 @@ export function BeneficiariesPage({ networkKey }: BeneficiariesPageProps) {
           <Stack gap={4}>
             {drafts.length === 0 ? (
               <Stack gap={3} className="items-center py-8">
-                <TextSmall style={{ color: '#6B7B6E' }}>
+                <TextSmall style={{ color: 'var(--color-soft)' }}>
                   No beneficiaries yet. Add at least one.
                 </TextSmall>
                 <Button variant="primary" onClick={addDraft}>
@@ -187,10 +187,10 @@ export function BeneficiariesPage({ networkKey }: BeneficiariesPageProps) {
 
             {drafts.length > 0 && (
               <Row justify="between" align="center" className="pt-2">
-                <TextSmall style={{ color: '#6B7B6E' }}>Total allocation</TextSmall>
+                <TextSmall style={{ color: 'var(--color-soft)' }}>Total allocation</TextSmall>
                 <Mono
                   style={{
-                    color: totalBps === 10000 ? 'var(--color-brand)' : 'var(--color-destructive)',
+                    color: totalBps === 10000 ? 'var(--color-primary)' : 'var(--color-destructive)',
                     fontWeight: 600,
                   }}
                 >
