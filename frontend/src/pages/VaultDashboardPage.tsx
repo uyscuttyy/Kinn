@@ -9,9 +9,11 @@ import { Card, EmptyState, LoadingState } from '@/components/Card';
 import { VaultStateBadge } from '@/components/Badge';
 import { DeadlineIndicator } from '@/components/DeadlineIndicator';
 import { useAuth, useVaultStatus, useBeneficiaries, useInheritanceInfo, useAssets, useCheckIn } from '@/hooks/useApi';
+import { useSignTx } from '@/hooks/useSignTx';
 import { formatAddress, formatUnits, getStateDescription, isNativeEth, getAllocationWidth } from '@/utils/format';
 import { NETWORKS } from '@/lib/config';
 import type { NetworkKey } from '@/types';
+import { showToast } from '@/components/Modal';
 
 interface VaultDashboardPageProps {
   networkKey: NetworkKey;
@@ -28,6 +30,7 @@ export function VaultDashboardPage({ networkKey }: VaultDashboardPageProps) {
   const { data: assetsData } = useAssets(networkKey);
 
   const checkInMutation = useCheckIn(wallet ?? '', networkKey);
+  const signTx = useSignTx(networkKey);
 
   // If no vault exists, show create CTA
   if (!statusLoading && !status) {
@@ -64,12 +67,12 @@ export function VaultDashboardPage({ networkKey }: VaultDashboardPageProps) {
     if (!wallet) return;
     try {
       const result = await checkInMutation.mutateAsync();
-      if (result.prepared && wallet) {
-        // For now, show a confirmation - in production would sign + broadcast
-        alert('Check-in prepared. Sign with your KeyManager to broadcast.');
+      if (result.prepared) {
+        const signed = await signTx.mutateAsync({ prepared: result.prepared, label: 'Check in' });
+        showToast(`Check-in submitted: ${signed.hash.slice(0, 10)}…`, 'success');
       }
     } catch (err) {
-      // error handled
+      showToast(err instanceof Error ? err.message : 'Check-in failed', 'error');
     }
   };
 
@@ -130,7 +133,7 @@ export function VaultDashboardPage({ networkKey }: VaultDashboardPageProps) {
                   variant="primary"
                   size="lg"
                   onClick={handleCheckIn}
-                  loading={checkInMutation.isPending}
+                  loading={checkInMutation.isPending || signTx.isPending}
                 >
                   <CheckCircle2 size={20} />
                   Check in now

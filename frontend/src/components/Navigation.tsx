@@ -8,6 +8,7 @@ import { Stack } from './Layout';
 import { formatAddress } from '@/utils/format';
 import { NETWORKS } from '@/lib/config';
 import type { NetworkKey } from '@/types';
+import { useExternalSigner } from '@/hooks/useExternalSigner';
 
 interface NavigationProps {
   networkKey: NetworkKey;
@@ -16,6 +17,7 @@ interface NavigationProps {
 export function Navigation({ networkKey }: NavigationProps) {
   const { wallet, isAuthenticated, logout } = useAuth();
   const { unlockedKeyId, lockAll } = useKeyManager();
+  const signer = useExternalSigner();
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
 
@@ -71,6 +73,12 @@ export function Navigation({ networkKey }: NavigationProps) {
             </>
           )}
 
+          {!isAuthenticated && (
+            <Link to="/connect" className="btn btn-system btn-sm">
+              Connect wallet
+            </Link>
+          )}
+
           {isAuthenticated && wallet && (
             <div className="hidden md:flex items-center" style={{ gap: 'var(--space-3)' }}>
               {unlockedKeyId && (
@@ -81,6 +89,24 @@ export function Navigation({ networkKey }: NavigationProps) {
                   Unlocked
                 </span>
               )}
+              {signer.available && !signer.connected && (
+                <button
+                  onClick={() => signer.connect()}
+                  disabled={signer.isConnecting}
+                  className="btn btn-system btn-sm"
+                >
+                  Connect wallet
+                </button>
+              )}
+              {signer.connected && (
+                <span
+                  className="badge badge-success"
+                  style={{ fontSize: '0.65rem' }}
+                  title={`Browser wallet: ${signer.kind}`}
+                >
+                  {signer.kind}
+                </span>
+              )}
               <span className="text-body-sm" style={{ color: '#6B7B6E' }}>
                 {network.name}
               </span>
@@ -89,6 +115,7 @@ export function Navigation({ networkKey }: NavigationProps) {
                 <button
                   onClick={async () => {
                     lockAll();
+                    signer.disconnect();
                     await logout();
                   }}
                   className="btn-ghost btn-sm"

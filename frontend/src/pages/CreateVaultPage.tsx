@@ -10,6 +10,7 @@ import { Card } from '@/components/Card';
 import { Input, Select } from '@/components/Input';
 import { ConfirmDialog, showToast } from '@/components/Modal';
 import { useCreateVault } from '@/hooks/useApi';
+import { useSignTx } from '@/hooks/useSignTx';
 import { useAuth } from '@/hooks/useApi';
 import { isValidAddress, parseBps } from '@/utils/format';
 import type { NetworkKey } from '@/types';
@@ -43,6 +44,7 @@ export function CreateVaultPage({ networkKey }: CreateVaultPageProps) {
   const navigate = useNavigate();
   const { wallet } = useAuth();
   const createVault = useCreateVault(networkKey);
+  const signTx = useSignTx(networkKey);
 
   const [intervalSec, setIntervalSec] = useState(2592000); // 30 days default
   const [maxMissed, setMaxMissed] = useState(2);
@@ -83,7 +85,7 @@ export function CreateVaultPage({ networkKey }: CreateVaultPageProps) {
       return;
     }
     try {
-      await createVault.mutateAsync({
+      const result = await createVault.mutateAsync({
         checkInInterval: intervalSec,
         maxMissedCheckIns: maxMissed,
         beneficiaries: beneficiaries.map((b) => ({
@@ -91,8 +93,14 @@ export function CreateVaultPage({ networkKey }: CreateVaultPageProps) {
           allocationBps: parseBps(b.allocationPct),
         })),
       });
-      showToast('Vault created. Sign the transaction in your wallet.', 'success');
-      navigate('/vault');
+      if (result.prepared) {
+        const signed = await signTx.mutateAsync({ prepared: result.prepared, label: 'Create vault' });
+        showToast(`Vault creation submitted: ${signed.hash.slice(0, 10)}…`, 'success');
+        navigate('/vault');
+      } else {
+        showToast('Vault created.', 'success');
+        navigate('/vault');
+      }
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Failed to create vault', 'error');
     }
@@ -269,7 +277,7 @@ export function CreateVaultPage({ networkKey }: CreateVaultPageProps) {
             variant="primary"
             onClick={() => setConfirmOpen(true)}
             disabled={!allValid}
-            loading={createVault.isPending}
+            loading={createVault.isPending || signTx.isPending}
           >
             Create vault
           </Button>

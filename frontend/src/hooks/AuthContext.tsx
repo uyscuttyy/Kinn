@@ -1,4 +1,4 @@
-/** Auth context — React state for wallet session, token, chain binding */
+/** Auth context — wallet session, token, challenge/verify */
 
 import { createContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import { QueryClient } from '@tanstack/react-query';
@@ -25,8 +25,10 @@ export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  login: (wallet: string) => Promise<void>;
-  verify: (signature: string) => Promise<void>;
+  /** Step 1: get a challenge from the backend, store it, return the message that must be signed. */
+  startChallenge: (wallet: string) => Promise<{ message: unknown; domain: unknown; types: unknown; primaryType: string }>;
+  /** Step 2: submit the signature, get a session token, populate state. */
+  completeChallenge: (signature: string) => Promise<void>;
   logout: () => Promise<void>;
   checkSession: () => Promise<void>;
 }
@@ -63,13 +65,19 @@ export function AuthProvider({ children, networkKey }: AuthProviderProps) {
     }
   }, [api, token]);
 
-  const login = useCallback(
+  const startChallenge = useCallback(
     async (walletAddress: string) => {
       setIsLoading(true);
       setError(null);
       try {
         const { challenge } = await api.auth.challenge(walletAddress);
         sessionStorage.setItem('kinn_auth_challenge', JSON.stringify(challenge));
+        return {
+          message: challenge.message,
+          domain: challenge.domain,
+          types: challenge.types,
+          primaryType: challenge.primaryType,
+        };
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to initiate authentication');
         throw err;
@@ -80,7 +88,7 @@ export function AuthProvider({ children, networkKey }: AuthProviderProps) {
     [api]
   );
 
-  const verify = useCallback(
+  const completeChallenge = useCallback(
     async (signature: string) => {
       setIsLoading(true);
       setError(null);
@@ -91,6 +99,9 @@ export function AuthProvider({ children, networkKey }: AuthProviderProps) {
         const { token: newToken, expiresAt: newExpiresAt } = await api.auth.verify(challenge, signature);
         setToken(newToken);
         setExpiresAt(newExpiresAt);
+        // The wallet address comes from the challenge message (it binds the wallet)
+        const walletFromChallenge = (challenge.message as { wallet?: string })?.wallet;
+        if (walletFromChallenge) setWallet(walletFromChallenge);
         sessionStorage.removeItem('kinn_auth_challenge');
         await checkSession();
       } catch (err) {
@@ -131,12 +142,12 @@ export function AuthProvider({ children, networkKey }: AuthProviderProps) {
       isAuthenticated: !!token && !!wallet,
       isLoading,
       error,
-      login,
-      verify,
+      startChallenge,
+      completeChallenge,
       logout,
       checkSession,
     }),
-    [token, wallet, chainId, expiresAt, isLoading, error, login, verify, logout, checkSession]
+    [token, wallet, chainId, expiresAt, isLoading, error, startChallenge, completeChallenge, logout, checkSession]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

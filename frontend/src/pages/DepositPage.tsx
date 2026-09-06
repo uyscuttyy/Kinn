@@ -10,6 +10,7 @@ import { Card, LoadingState } from '@/components/Card';
 import { Select, Input } from '@/components/Input';
 import { showToast } from '@/components/Modal';
 import { useAuth, useAssets, useVaultStatus, useApproveToken, useDeposit } from '@/hooks/useApi';
+import { useSignTx } from '@/hooks/useSignTx';
 import { formatUnits, isNativeEth } from '@/utils/format';
 import type { NetworkKey, Asset } from '@/types';
 
@@ -35,6 +36,7 @@ export function DepositPage({ networkKey }: DepositPageProps) {
 
   const approveMutation = useApproveToken(wallet ?? '', networkKey);
   const depositMutation = useDeposit(wallet ?? '', networkKey);
+  const signTx = useSignTx(networkKey);
 
   const currentBalance = selectedAsset
     ? status?.balances?.[selectedAsset.address] ??
@@ -57,24 +59,27 @@ export function DepositPage({ networkKey }: DepositPageProps) {
       const weiAmount = BigInt(intPart + paddedFrac).toString();
 
       if (!isNativeEth(selectedAsset)) {
-        // ERC-20: need approve first
+        // ERC-20: approve first, then deposit — each signed in MetaMask
         showToast('Approving token spending…', 'info');
         const approveResult = await approveMutation.mutateAsync({
           token: selectedAsset.address,
           amount: weiAmount,
         });
-        showToast('Approved. Preparing deposit…', 'info');
-        // In production, would sign + broadcast the approve, then continue
-        console.log('Approve prepared:', approveResult);
+        if (approveResult.prepared) {
+          const signedApprove = await signTx.mutateAsync({ prepared: approveResult.prepared, label: 'Approve' });
+          showToast(`Approved: ${signedApprove.hash.slice(0, 10)}… Now sign the deposit.`, 'success');
+        }
       }
 
       const depositResult = await depositMutation.mutateAsync({
         asset: selectedAsset.address,
         amount: weiAmount,
       });
-      showToast('Deposit prepared. Sign with your KeyManager to broadcast.', 'success');
-      console.log('Deposit prepared:', depositResult);
-      navigate('/vault');
+      if (depositResult.prepared) {
+        const signed = await signTx.mutateAsync({ prepared: depositResult.prepared, label: 'Deposit' });
+        showToast(`Deposit submitted: ${signed.hash.slice(0, 10)}…`, 'success');
+        navigate('/vault');
+      }
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Deposit failed', 'error');
     }
@@ -152,10 +157,10 @@ export function DepositPage({ networkKey }: DepositPageProps) {
               <Button
                 variant="primary"
                 onClick={handleDeposit}
-                loading={approveMutation.isPending || depositMutation.isPending}
+                loading={approveMutation.isPending || depositMutation.isPending || signTx.isPending}
                 disabled={!selectedAsset || !amount || parseFloat(amount) <= 0}
               >
-                Prepare deposit
+                Deposit
               </Button>
             </Row>
           </Stack>

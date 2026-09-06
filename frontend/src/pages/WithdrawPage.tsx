@@ -10,6 +10,7 @@ import { Card, LoadingState } from '@/components/Card';
 import { Select, Input } from '@/components/Input';
 import { showToast } from '@/components/Modal';
 import { useAuth, useAssets, useVaultStatus, useWithdraw } from '@/hooks/useApi';
+import { useSignTx } from '@/hooks/useSignTx';
 import { formatUnits } from '@/utils/format';
 import type { NetworkKey, Asset } from '@/types';
 
@@ -34,6 +35,7 @@ export function WithdrawPage({ networkKey }: WithdrawPageProps) {
   const selectedAsset = assets.find((a) => a.symbol === selectedSymbol);
 
   const withdrawMutation = useWithdraw(wallet ?? '', networkKey);
+  const signTx = useSignTx(networkKey);
 
   const currentBalance = selectedAsset
     ? status?.balances?.[selectedAsset.address] ??
@@ -60,9 +62,11 @@ export function WithdrawPage({ networkKey }: WithdrawPageProps) {
         asset: selectedAsset.address,
         amount: weiAmount,
       });
-      showToast('Withdrawal prepared. Sign with your KeyManager.', 'success');
-      console.log('Withdraw prepared:', result);
-      navigate('/vault');
+      if (result.prepared) {
+        const signed = await signTx.mutateAsync({ prepared: result.prepared, label: 'Withdraw' });
+        showToast(`Withdrawal submitted: ${signed.hash.slice(0, 10)}…`, 'success');
+        navigate('/vault');
+      }
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Withdrawal failed', 'error');
     }
@@ -159,10 +163,10 @@ export function WithdrawPage({ networkKey }: WithdrawPageProps) {
               <Button
                 variant="destructive"
                 onClick={handleWithdraw}
-                loading={withdrawMutation.isPending}
+                loading={withdrawMutation.isPending || signTx.isPending}
                 disabled={!selectedAsset || !amount || parseFloat(amount) <= 0}
               >
-                Prepare withdrawal
+                Withdraw
               </Button>
             </Row>
           </Stack>

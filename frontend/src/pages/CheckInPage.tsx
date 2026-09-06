@@ -9,6 +9,7 @@ import { Card, LoadingState } from '@/components/Card';
 import { DeadlineIndicator } from '@/components/DeadlineIndicator';
 import { VaultStateBadge } from '@/components/Badge';
 import { useAuth, useVaultStatus, useInheritanceInfo, useCheckIn } from '@/hooks/useApi';
+import { useSignTx } from '@/hooks/useSignTx';
 import { formatTimestamp } from '@/utils/format';
 import { showToast } from '@/components/Modal';
 import type { NetworkKey } from '@/types';
@@ -23,6 +24,7 @@ export function CheckInPage({ networkKey }: CheckInPageProps) {
   const { data: status, isLoading: statusLoading } = useVaultStatus(wallet, networkKey);
   const { data: inheritance } = useInheritanceInfo(wallet, networkKey);
   const checkInMutation = useCheckIn(wallet ?? '', networkKey);
+  const signTx = useSignTx(networkKey);
 
   if (statusLoading || !status) {
     return <LoadingState variant="page" message="Loading…" />;
@@ -34,9 +36,11 @@ export function CheckInPage({ networkKey }: CheckInPageProps) {
   const handleCheckIn = async () => {
     try {
       const result = await checkInMutation.mutateAsync();
-      showToast('Check-in prepared. Sign with your KeyManager to broadcast.', 'success');
-      console.log('Check-in prepared:', result);
-      navigate('/vault');
+      if (result.prepared) {
+        const signed = await signTx.mutateAsync({ prepared: result.prepared, label: 'Check in' });
+        showToast(`Check-in submitted: ${signed.hash.slice(0, 10)}…`, 'success');
+        navigate('/vault');
+      }
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Check-in failed', 'error');
     }
@@ -128,7 +132,7 @@ export function CheckInPage({ networkKey }: CheckInPageProps) {
                 variant="primary"
                 size="lg"
                 onClick={handleCheckIn}
-                loading={checkInMutation.isPending}
+                loading={checkInMutation.isPending || signTx.isPending}
                 fullWidth
               >
                 Check in now

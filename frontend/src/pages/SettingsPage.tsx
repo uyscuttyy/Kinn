@@ -17,6 +17,7 @@ import {
   useWithdrawReserve,
   useCloseVault,
 } from '@/hooks/useApi';
+import { useSignTx } from '@/hooks/useSignTx';
 import { formatUnits } from '@/utils/format';
 import type { NetworkKey } from '@/types';
 
@@ -53,6 +54,7 @@ export function SettingsPage({ networkKey }: SettingsPageProps) {
   const topUpMutation = useTopUpReserve(wallet ?? '', networkKey);
   const withdrawMutation = useWithdrawReserve(wallet ?? '', networkKey);
   const closeMutation = useCloseVault(wallet ?? '', networkKey);
+  const signTx = useSignTx(networkKey);
 
   if (isLoading || !status) {
     return <LoadingState variant="page" message="Loading settings…" />;
@@ -60,11 +62,14 @@ export function SettingsPage({ networkKey }: SettingsPageProps) {
 
   const handleSaveSchedule = async () => {
     try {
-      await updateSettingsMutation.mutateAsync({
+      const result = await updateSettingsMutation.mutateAsync({
         checkInInterval: intervalSec,
         maxMissedCheckIns: maxMissed,
       });
-      showToast('Settings prepared. Sign the transaction.', 'success');
+      if (result.prepared) {
+        const signed = await signTx.mutateAsync({ prepared: result.prepared, label: 'Update settings' });
+        showToast(`Settings submitted: ${signed.hash.slice(0, 10)}…`, 'success');
+      }
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Failed to update', 'error');
     }
@@ -76,9 +81,12 @@ export function SettingsPage({ networkKey }: SettingsPageProps) {
       const [intPart, fracPart = ''] = reserveAmount.split('.');
       const paddedFrac = fracPart.padEnd(18, '0').slice(0, 18);
       const weiAmount = BigInt(intPart + paddedFrac).toString();
-      await topUpMutation.mutateAsync(weiAmount);
-      showToast('Top-up prepared. Sign the transaction.', 'success');
-      setReserveAmount('');
+      const result = await topUpMutation.mutateAsync(weiAmount);
+      if (result.prepared) {
+        const signed = await signTx.mutateAsync({ prepared: result.prepared, label: 'Top up reserve' });
+        showToast(`Top-up submitted: ${signed.hash.slice(0, 10)}…`, 'success');
+        setReserveAmount('');
+      }
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Top-up failed', 'error');
     }
@@ -90,9 +98,12 @@ export function SettingsPage({ networkKey }: SettingsPageProps) {
       const [intPart, fracPart = ''] = reserveAmount.split('.');
       const paddedFrac = fracPart.padEnd(18, '0').slice(0, 18);
       const weiAmount = BigInt(intPart + paddedFrac).toString();
-      await withdrawMutation.mutateAsync(weiAmount);
-      showToast('Withdrawal prepared. Sign the transaction.', 'success');
-      setReserveAmount('');
+      const result = await withdrawMutation.mutateAsync(weiAmount);
+      if (result.prepared) {
+        const signed = await signTx.mutateAsync({ prepared: result.prepared, label: 'Withdraw reserve' });
+        showToast(`Reserve withdrawal submitted: ${signed.hash.slice(0, 10)}…`, 'success');
+        setReserveAmount('');
+      }
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Withdrawal failed', 'error');
     }
@@ -100,9 +111,12 @@ export function SettingsPage({ networkKey }: SettingsPageProps) {
 
   const handleClose = async () => {
     try {
-      await closeMutation.mutateAsync();
-      showToast('Vault close prepared. Sign the transaction.', 'success');
-      navigate('/vault');
+      const result = await closeMutation.mutateAsync();
+      if (result.prepared) {
+        const signed = await signTx.mutateAsync({ prepared: result.prepared, label: 'Close vault' });
+        showToast(`Close submitted: ${signed.hash.slice(0, 10)}…`, 'success');
+        navigate('/vault');
+      }
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Close failed', 'error');
     }
@@ -162,7 +176,7 @@ export function SettingsPage({ networkKey }: SettingsPageProps) {
               <Button
                 variant="primary"
                 onClick={handleSaveSchedule}
-                loading={updateSettingsMutation.isPending}
+                loading={updateSettingsMutation.isPending || signTx.isPending}
               >
                 Save schedule
               </Button>
@@ -201,7 +215,7 @@ export function SettingsPage({ networkKey }: SettingsPageProps) {
                 <Button
                   variant="secondary"
                   onClick={handleTopUp}
-                  loading={topUpMutation.isPending}
+                  loading={topUpMutation.isPending || signTx.isPending}
                   disabled={!reserveAmount}
                 >
                   Top up
@@ -209,7 +223,7 @@ export function SettingsPage({ networkKey }: SettingsPageProps) {
                 <Button
                   variant="ghost"
                   onClick={handleWithdrawReserve}
-                  loading={withdrawMutation.isPending}
+                  loading={withdrawMutation.isPending || signTx.isPending}
                   disabled={!reserveAmount}
                 >
                   Withdraw
@@ -259,7 +273,7 @@ export function SettingsPage({ networkKey }: SettingsPageProps) {
         description="This is permanent. The vault will be closed and you can create a new one. Only works when the vault is empty."
         confirmText="Close vault"
         variant="destructive"
-        loading={closeMutation.isPending}
+        loading={closeMutation.isPending || signTx.isPending}
       />
     </Container>
   );

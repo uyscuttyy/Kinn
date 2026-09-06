@@ -16,6 +16,7 @@ import type {
 import { createApiClient } from '@/lib/api';
 import { parseRevertReason } from '@/utils/format';
 import { queryClient, AuthContext, type AuthState } from './AuthContext';
+import { useExternalSigner } from './useExternalSigner';
 
 export { queryClient };
 
@@ -410,33 +411,51 @@ export function useKeyManager() {
 
 // ============================================================================
 // Signing Flow Hook (prepare → simulate → sign → broadcast → verify)
+// Uses external signer (MetaMask/Rabby) via window.ethereum
 // ============================================================================
 
 export function useSignAndBroadcast(networkKey: NetworkKey) {
-  const { signTransaction } = useKeyManager();
+  const signer = useExternalSigner();
   const simulateMutation = useSimulateTransaction(networkKey);
-  const submitMutation = useSubmitTransaction(networkKey);
 
   const signAndBroadcast = useCallback(
     async ({
       prepared,
-      keyId,
       onSuccess,
       onError,
     }: {
       prepared: PreparedTransaction;
-      keyId: string;
       onSuccess?: (hash: string) => void;
       onError?: (error: Error) => void;
     }) => {
       try {
+        if (!signer.connected) {
+          throw new Error('Connect your browser wallet first');
+        }
+
+        // 1. Simulate
         const simulated = await simulateMutation.mutateAsync({ prepared });
         if (!simulated.success) {
           throw new Error(`Simulation failed: ${parseRevertReason(simulated.revert || 'Unknown error')}`);
         }
 
-        const signedTx = await signTransaction(keyId, prepared);
-        const { hash } = await submitMutation.mutateAsync(signedTx);
+        // 2. Switch chain if needed
+        if (signer.chainId && prepared.chainId && signer.chainId !== prepared.chainId) {
+          const w = (window as Window & { ethereum?: { request: (args: { method: string; params?: unknown[] }) => Promise<unknown> } }).ethereum;
+          if (w) {
+            try {
+              await w.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: `0x${prepared.chainId.toString(16)}` }],
+              });
+            } catch {
+              // ignore — let the user handle it
+            }
+          }
+        }
+
+        // 3. Sign + broadcast via external wallet
+        const hash = await signer.sendTransaction(prepared);
         onSuccess?.(hash);
         return hash;
       } catch (err) {
@@ -445,14 +464,15 @@ export function useSignAndBroadcast(networkKey: NetworkKey) {
         throw error;
       }
     },
-    [signTransaction, simulateMutation, submitMutation]
+    [signer, simulateMutation]
   );
 
   return {
     signAndBroadcast,
     isSimulating: simulateMutation.isPending,
-    isSubmitting: submitMutation.isPending,
-    isPending: simulateMutation.isPending || submitMutation.isPending,
-    error: simulateMutation.error || submitMutation.error,
+    isSigning: false, // not tracked separately; signAndBroadcast is single-shot
+    isPending: simulateMutation.isPending,
+    error: simulateMutation.error,
+    signer,
   };
 }

@@ -10,6 +10,7 @@ import { Card, LoadingState } from '@/components/Card';
 import { Input } from '@/components/Input';
 import { ConfirmDialog, showToast } from '@/components/Modal';
 import { useAuth, useBeneficiaries, useUpdateBeneficiaries } from '@/hooks/useApi';
+import { useSignTx } from '@/hooks/useSignTx';
 import { isValidAddress, parseBps, getAllocationWidth } from '@/utils/format';
 import type { NetworkKey } from '@/types';
 
@@ -28,6 +29,7 @@ export function BeneficiariesPage({ networkKey }: BeneficiariesPageProps) {
   const { wallet } = useAuth();
   const { data: existing, isLoading } = useBeneficiaries(wallet, networkKey);
   const updateMutation = useUpdateBeneficiaries(wallet ?? '', networkKey);
+  const signTx = useSignTx(networkKey);
 
   const [drafts, setDrafts] = useState<BeneficiaryDraft[]>([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -70,12 +72,15 @@ export function BeneficiariesPage({ networkKey }: BeneficiariesPageProps) {
       return;
     }
     try {
-      await updateMutation.mutateAsync({
+      const result = await updateMutation.mutateAsync({
         accounts: drafts.map((d) => d.account),
         allocationBps: drafts.map((d) => parseBps(d.allocationPct)),
       });
-      showToast('Beneficiaries updated. Sign the transaction.', 'success');
-      navigate('/vault');
+      if (result.prepared) {
+        const signed = await signTx.mutateAsync({ prepared: result.prepared, label: 'Update beneficiaries' });
+        showToast(`Beneficiaries update submitted: ${signed.hash.slice(0, 10)}…`, 'success');
+        navigate('/vault');
+      }
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Update failed', 'error');
     }
@@ -210,7 +215,7 @@ export function BeneficiariesPage({ networkKey }: BeneficiariesPageProps) {
             variant="primary"
             onClick={() => setConfirmOpen(true)}
             disabled={!allValid}
-            loading={updateMutation.isPending}
+            loading={updateMutation.isPending || signTx.isPending}
           >
             Save changes
           </Button>
@@ -225,7 +230,7 @@ export function BeneficiariesPage({ networkKey }: BeneficiariesPageProps) {
           handleSave();
         }}
         title="Update beneficiaries?"
-        description="Replaces the entire beneficiary list. You'll need to sign the transaction with your KeyManager."
+        description="Replaces the entire beneficiary list. You'll sign the transaction in your connected wallet."
         confirmText="Update and sign"
       />
     </Container>
